@@ -1,0 +1,25 @@
+const TEMPLATE_REGEXP = '/\{([^\{\}]+)\}/';
+
+/**
+* @param  string $string
+* @param  mixed $interpolate
+* @param  mixed $defaults
+* @return string
+*/
+function template($string, $interpolate = [], $defaults = []) {
+    $defaults = !is_null($defaults) ? $defaults : [];
+    $interpolate = !is_null($interpolate) ? $interpolate : [];
+
+    return preg_replace_callback(TEMPLATE_REGEXP, function ($matches) use ($defaults, $interpolate) {
+        $key = $matches[1];
+        if ($interpolate[$key] != null) {
+            return urlencode($interpolate[$key]);
+        }
+
+        if ($defaults[$key] != null) {
+            return urlencode($defaults[$key]);
+        }
+
+        return '';
+    }, $string);
+}

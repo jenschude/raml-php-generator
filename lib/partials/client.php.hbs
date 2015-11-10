@@ -1,0 +1,29 @@
+class Client
+{
+    private $httpClient;
+
+    private $options;
+
+    public function __construct($options = [])
+    {
+        $baseUriParameters = [];
+        if (isset($options['baseUriParameters'])) {
+            $baseUriParameters = $options['baseUriParameters'];
+            unset($options['baseUriParameters']);
+        }
+        if (isset($options['baseUri'])) {
+            $options['base_uri'] = template($options['baseUri'], $baseUriParameters);
+            unset($options['baseUri']);
+        } else {
+            $options['base_uri'] = template({{{stringify baseUri}}}, [{{#each baseUriParameters}}'{{displayName}}' => '{{{stringify default}}}'{{#unless @last}}, {{/unless}}{{/each}}]);
+        }
+        $this->options = $options;
+        $this->httpClient = new HttpClient($this->options);
+        $this->resources = new {{pascalCase resources.id}}('.', $this);
+    }
+
+    public function getHttpClient()
+    {
+        return $this->httpClient;
+    }
+}

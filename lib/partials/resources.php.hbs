@@ -1,0 +1,147 @@
+class Parameter
+{
+    protected $key;
+    protected $value;
+
+    public function __construct($key, $value = null)
+    {
+        if (empty($key)) {
+            throw new \InvalidArgumentException('no key given');
+        }
+        $this->key = $key;
+        $this->value = $value;
+    }
+
+    public function getId()
+    {
+        return $this->key;
+    }
+
+    public function getValue()
+    {
+        return $this->value;
+    }
+
+    public function __toString()
+    {
+        $value = $this->getValue();
+        if (is_null($value)) {
+            $paramStr = $this->key;
+        } elseif (is_bool($value)) {
+            $paramStr = $this->key . '=' . ($value ? 'true' : 'false');
+        } else {
+            $paramStr = $this->key . '=' . urlencode((string)$value);
+        }
+
+        return $paramStr;
+    }
+}
+
+class MultiParameter extends Parameter
+{
+    public function getId()
+    {
+        return $this->__toString();
+    }
+}
+
+class Resource
+{
+    protected function buildRequest($path, $method, $body, $options)
+    {
+        $hasBody = $method !== 'GET' && $method !== 'HEAD';
+
+        $request = new Request($method, $path, $options);
+
+        if ($hasBody && !is_null($body)) {
+            $request = $request->withBody($body);
+        }
+        $reqQuery = isset($options['query']) ? $options['query'] : [];
+        if (!$hasBody && !is_null($body)) {
+            $reqQuery = array_merge($reqQuery, $body);
+        }
+        if (count($reqQuery) > 0) {
+            $params = [];
+            foreach ($reqQuery as $key => $value) {
+                if (!is_array($value)) {
+                    $param = new Parameter($key, $value);
+                    $params[$param->getId()] = $param;
+                } else {
+                    foreach ($value as $data) {
+                        $param = new MultiParameter($key, $data);
+                        $params[$param->getId()] = $param;
+                    }
+                }
+            }
+            $params = array_map(
+                function ($param) {
+                    return (string)$param;
+                },
+                $params
+            );
+            sort($params);
+            $query = implode('&', $params);
+            $uri = $request->getUri()->withQuery($query);
+            $request = $request->withUri($uri);
+        }
+
+        return $request;
+    }
+
+    protected $client;
+    protected $uri;
+
+    public function __construct($uri, $client)
+    {
+        $this->uri = $uri;
+        $this->client = $client;
+    }
+}
+
+{{#each allResources}}
+class {{pascalCase id}} extends Resource
+{
+    {{#each children}}
+    {{#unless uriParameters}}
+    public ${{camelCase @key}};
+    {{/unless}}
+    {{/each}}
+
+    public function __construct($uri, $client)
+    {
+        parent::__construct($uri, $client);
+
+        {{#each children}}
+
+        {{#unless uriParameters}}
+        $this->{{camelCase @key}} = new {{pascalCase id}}($this->uri . {{{stringify relativeUri}}}, $client);
+        {{/unless}}
+        {{/each}}
+    }
+
+    {{#each children}}
+    {{#if uriParameters}}
+    public function {{camelCase @key}}({{#each uriParameters}}${{displayName}}{{#unless @last}}, {{/unless}}{{/each}})
+    {
+        $uri = $this->uri . template({{{stringify relativeUri}}}, [{{#each uriParameters}}${{displayName}}{{#unless @last}}, {{/unless}}{{/each}}]);
+
+        return new {{pascalCase id}}($uri, $this->client);
+    }
+    {{/if}}
+    {{/each}}
+
+    {{#each methods}}
+    public function {{camelCase @key}}($body = null, $options = [])
+    {
+        $request = $this->buildRequest($this->uri, {{{stringify (upperCase method)}}}, $body, $options);
+
+        {{#if headers}}
+        {{#each headers}}
+        $request = $request->withHeader({{{stringify @key}}}, {{{stringify default}}});
+        {{/each}}
+        {{/if}}
+        return $request;
+    }
+    {{/each}}
+}
+{{/each}}
