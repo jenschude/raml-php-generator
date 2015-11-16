@@ -51,12 +51,18 @@ class Resource
     {
         $hasBody = $method !== 'GET' && $method !== 'HEAD';
 
-        $request = new Request($method, $path, $options);
+        $reqQuery = [];
+        if (isset($options['query'])) {
+            $reqQuery = $options['query'];
+            unset($options['query']);
+        }
+        $headers = isset($options['headers']) ? $options['headers'] : [];
+
+        $request = new Request($method, $path, $headers);
 
         if ($hasBody && !is_null($body)) {
             $request = $request->withBody($body);
         }
-        $reqQuery = isset($options['query']) ? $options['query'] : [];
         if (!$hasBody && !is_null($body)) {
             $reqQuery = array_merge($reqQuery, $body);
         }
@@ -135,9 +141,11 @@ class {{pascalCase id}} extends Resource
     {
         $request = $this->buildRequest($this->uri, {{{stringify (upperCase method)}}}, $body, $options);
 
-        {{#if headers}}
+        {{#if (keys headers)}}
         {{#each headers}}
-        $request = $request->withHeader({{{stringify @key}}}, {{{stringify default}}});
+        if (!$request->hasHeader({{{stringify @key}}})) {
+            $request = $request->withHeader({{{stringify @key}}}, {{{stringify default}}});
+        }
         {{/each}}
         {{/if}}
         return $request;

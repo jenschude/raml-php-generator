@@ -2,7 +2,6 @@
 
 namespace spec\ExampleApi;
 
-use GuzzleHttp\Client as HttpClient;
 use GuzzleHttp\Handler\MockHandler;
 use GuzzleHttp\HandlerStack;
 use GuzzleHttp\Middleware;
@@ -80,29 +79,72 @@ class ClientSpec extends ObjectBehavior
 
     function it_should_append_query_string_array()
     {
-        $request = $this->resources->bounce->url->get(['test' => 'test', 'abc' => 123, 'key' => [1,2,3]], ['query' => ['xyz' => '123']]);
+        $request = $this->resources->bounce->url->get(null, ['query' => ['key' => [1,2,3]]]);
+        $response = $this->getHttpClient()->send($request);
+
+        $response->getStatusCode()->shouldBe(200);
+        $response->getBody()->__toString()->shouldBeEqualTo('/bounce/url?key=1&key=2&key=3');
+    }
+
+    function it_should_merge_body_and_query()
+    {
+        $request = $this->resources->bounce->url->get(
+            ['test' => 'test', 'abc' => 123, 'key' => [1,2,3]],
+            ['query' => ['xyz' => '123']]
+        );
         $response = $this->getHttpClient()->send($request);
 
         $response->getStatusCode()->shouldBe(200);
         $response->getBody()->__toString()->shouldBeEqualTo('/bounce/url?abc=123&key=1&key=2&key=3&test=test&xyz=123');
     }
-}
 
-//
-//describe('append query string', function () {
-//    function validateResponse (response) {
-//        expect(response.status).to.equal(200)
-//      expect(response.body).to.equal('/bounce/url?key=string')
-//    }
-//
-//    describe('body argument (#get)', function () {
-//        it('should pass query string as an object', function () {
-//            return client.resources.bounce.url.get({ key: 'string' })
-//          .then(validateResponse)
-//      })
-//
-//      it('should pass query string as a string', function () {
-//          return client.resources.bounce.url.get('key=string')
-//          .then(validateResponse)
-//      })
-//    })
+    function it_should_be_a_canonical_query()
+    {
+        $request = $this->resources->bounce->url->get(
+            null,
+            ['query' => ['test' => 'test', 'xyz' => '123', 'abc' => 123, 'key' => [1,2,3]]]
+        );
+        $response = $this->getHttpClient()->send($request);
+
+        $response->getStatusCode()->shouldBe(200);
+        $response->getBody()->__toString()->shouldBeEqualTo('/bounce/url?abc=123&key=1&key=2&key=3&test=test&xyz=123');
+    }
+
+    function it_should_pass_custom_headers_with_the_request()
+    {
+        $request = $this->resources->bounce->headers->get(null, ['headers' => ['X-Custom-Header' =>  'Custom Header']]);
+        $response = $this->getHttpClient()->send($request);
+
+        $response->getStatusCode()->shouldBe(200);
+        $response->getBody()->__toString()->shouldJsonBeEqualTo('Custom Header', 'x-custom-header');
+    }
+
+    function it_should_use_default_headers_from_definition()
+    {
+        $request = $this->resources->defaults->headers->get();
+        $response = $this->getHttpClient()->send($request);
+        $response->getStatusCode()->shouldBe(200);
+        $response->getBody()->__toString()->shouldJsonBeEqualTo('Hello World!', 'x-default-header');
+    }
+
+    function it_should_override_default_headers()
+    {
+        $request = $this->resources->defaults->headers->get(null, ['headers' => ['x-default-header' => 'Overridden']]);
+        $response = $this->getHttpClient()->send($request);
+        $response->getStatusCode()->shouldBe(200);
+        $response->getBody()->__toString()->shouldJsonBeEqualTo('Overridden', 'x-default-header');
+    }
+
+    public function getMatchers()
+    {
+        return [
+            'jsonBeEqualTo' => function ($subject, $json, $key = null) {
+                $subject = json_decode($subject, true);
+                if (!is_null($key)) {
+                    $subject = $subject[$key];
+                }
+                return $subject == $json;
+            }
+        ];
+    }
+}
