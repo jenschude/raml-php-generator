@@ -47,6 +47,20 @@ class MultiParameter extends Parameter
 
 class Resource
 {
+    protected $client;
+    protected $uri;
+
+    public function __construct($uri, Client $client)
+    {
+        $this->uri = $uri;
+        $this->client = $client;
+    }
+
+    protected function handleRequest(Client $client, Request $request)
+    {
+        return $client->send($request);
+    }
+
     protected function buildRequest($path, $method, $body, $options)
     {
         $hasBody = $method !== 'GET' && $method !== 'HEAD';
@@ -92,15 +106,6 @@ class Resource
         }
 
         return $request;
-    }
-
-    protected $client;
-    protected $uri;
-
-    public function __construct($uri, $client)
-    {
-        $this->uri = $uri;
-        $this->client = $client;
     }
 }
 
@@ -148,7 +153,7 @@ class {{pascalCase id}} extends Resource
         }
         {{/each}}
         {{/if}}
-        return $request;
+        return $this->handleRequest($this->client, $request);
     }
     {{/each}}
 }

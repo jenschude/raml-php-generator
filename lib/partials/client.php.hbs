@@ -22,6 +22,11 @@ class Client
         $this->resources = new {{pascalCase resources.id}}('.', $this);
     }
 
+    public function send(Request $request)
+    {
+        return $this->getHttpClient()->send($request);
+    }
+
     public function getHttpClient()
     {
         return $this->httpClient;
