@@ -132,8 +132,15 @@ class {{pascalCase id}} extends Resource
 
     {{#each children}}
     {{#if uriParameters}}
-    public function {{camelCase @key}}({{#each uriParameters}}${{displayName}}{{#unless @last}}, {{/unless}}{{/each}})
+        public function {{camelCase @key}}({{#each uriParameters}}${{displayName}}{{#if default}} = {{{stringify default}}}{{/if}}{{#unless @last}}, {{/unless}}{{/each}})
     {
+        {{#each uriParameters}}
+        {{#if default}}
+        if (is_null(${{displayName}})) {
+            ${{displayName}} = {{{stringify default}}};
+        }
+        {{/if}}
+        {{/each}}
         $uri = $this->uri . template({{{stringify relativeUri}}}, [{{#each uriParameters}}${{displayName}}{{#unless @last}}, {{/unless}}{{/each}}]);
 
         return new {{pascalCase id}}($uri, $this->client);
@@ -158,3 +165,14 @@ class {{pascalCase id}} extends Resource
     {{/each}}
 }
 {{/each}}
+
+class CustomResource extends Resource
+{
+    {{#each supportedMethods}}
+    public function {{camelCase this}}($body = null, $options = [])
+    {
+        $request = $this->buildRequest($this->uri, {{{stringify (upperCase this)}}}, $body, $options);
+        return $this->handleRequest($this->client, $request);
+    }
+{{/each}}
+}

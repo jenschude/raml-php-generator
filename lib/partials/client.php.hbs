@@ -4,6 +4,10 @@ class Client
 
     private $options;
 
+    public $resources;
+
+    public $resource;
+
     public function __construct($options = [])
     {
         $baseUriParameters = [];
@@ -20,6 +24,13 @@ class Client
         $this->options = $options;
         $this->httpClient = new HttpClient($this->options);
         $this->resources = new {{pascalCase resources.id}}('.', $this);
+    }
+
+    public function resource($route, $parameters)
+    {
+        $path = '/' . ltrim(template($route, $parameters),'/');
+
+        return new CustomResource($path, $this);
     }
 
     public function send(Request $request)
