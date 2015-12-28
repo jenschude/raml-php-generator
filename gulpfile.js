@@ -2,10 +2,8 @@ var gulp = require('gulp')
 var join = require('path').join
 var karma = require('karma').server
 var exec = require('child_process').exec
-var spawn = require('child_process').spawn
 var server = require('./test/support/server')
 
-var MOCHA_BIN_PATH = join(__dirname, 'node_modules/mocha/bin/_mocha')
 var CLIENT_OUT_DIR = join(__dirname, 'test/.tmp')
 var RAML_CLIENT_SCRIPT = join(__dirname, 'bin/raml-php-generator.js')
 
@@ -42,7 +40,7 @@ gulp.task('generate', function (done) {
     process.stdout.write(stdout)
     process.stderr.write(stderr)
 
-    exec('cd ' + output + ' && npm install', done)
+    exec('composer install', done)
   })
 })
 

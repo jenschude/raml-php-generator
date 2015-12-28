@@ -1,16 +1,12 @@
-# RAML JavaScript Generator
+# RAML PHP Client Generator
 
-[![NPM version][npm-image]][npm-url]
-[![NPM downloads][downloads-image]][downloads-url]
-[![Build status][travis-image]][travis-url]
-[![Test coverage][coveralls-image]][coveralls-url]
 
-> Generate a JavaScript API client from RAML.
+> Generate a PHP API client from RAML.
 
 ## Installation
 
 ```
-npm install raml-javascript-generator -g
+npm install raml-php-generator -g
 ```
 
 ## Usage
@@ -20,26 +16,17 @@ This module depends on [raml-generator](https://github.com/mulesoft-labs/raml-ge
 ### Global
 
 ```
-raml-javascript-generator api.raml -o api-client-js
+raml-php-generator api.raml -o api-client-php
 ```
 
 ### Locally
 
 ```js
-var jsGenerator = require('raml-javascript-generator')
+var phpGenerator = require('raml-php-generator')
 
-var output = jsGenerator(/* raml, data */)
+var output = phpGenerator(/* raml, data */)
 ```
 
 ## License
 
 Apache License 2.0
-
-[npm-image]: https://img.shields.io/npm/v/raml-javascript-generator.svg?style=flat
-[npm-url]: https://npmjs.org/package/raml-javascript-generator
-[downloads-image]: https://img.shields.io/npm/dm/raml-javascript-generator.svg?style=flat
-[downloads-url]: https://npmjs.org/package/raml-javascript-generator
-[travis-image]: https://img.shields.io/travis/mulesoft-labs/raml-javascript-generator.svg?style=flat
-[travis-url]: https://travis-ci.org/mulesoft-labs/raml-javascript-generator
-[coveralls-image]: https://img.shields.io/coveralls/mulesoft-labs/raml-javascript-generator.svg?style=flat
-[coveralls-url]: https://coveralls.io/r/mulesoft-labs/raml-javascript-generator?branch=master
