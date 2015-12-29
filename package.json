@@ -1,6 +1,6 @@
 {
   "name": "raml-php-generator",
-  "version": "0.0.3",
+  "version": "0.0.5",
   "description": "Generate a PHP API client from RAML",
   "main": "raml-php-generator.js",
   "files": [
