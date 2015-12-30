@@ -146,6 +146,13 @@ class ClientSpec extends ObjectBehavior
         $response->getBody()->__toString()->shouldJsonBeEqualTo('Overridden', 'x-default-header');
     }
 
+    function it_should_override_default_headers_with_uppercase()
+    {
+        $response = $this->resources->defaults->headers->get(null, ['headers' => ['X-DEFAULT-HEADER' => 'Overridden']]);
+        $response->getStatusCode()->shouldBe(200);
+        $response->getBody()->__toString()->shouldJsonBeEqualTo('Overridden', 'x-default-header');
+    }
+
     /**
      * response headers
      */
