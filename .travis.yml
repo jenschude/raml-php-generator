@@ -1,18 +1,11 @@
-language: php
-php:
-  - 5.6
-  - 5.5
-  - 7.0
-  - hhvm
+language: node_js
 
-matrix:
-  allow_failures:
-    - php: hhvm
-    - php: 7.0
+notifications:
+  email:
+    on_success: never
+    on_failure: change
 
-before_script:
-  - composer install -o
-  - npm install
+node_js:
+  - "stable"
 
-script:
-  - npm run test
+after_script: "npm install coveralls@2 && cat ./coverage/lcov.info | coveralls"
