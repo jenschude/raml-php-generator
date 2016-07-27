@@ -1,3 +1,3 @@
 export default function () {
-  return 'node_modules\n'
+    return 'node_modules\n'
 }

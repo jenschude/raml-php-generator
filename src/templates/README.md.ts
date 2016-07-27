@@ -1,19 +1,19 @@
-import { Api } from 'raml-generator'
+import {Api} from 'raml-generator'
 import paramCase = require('param-case')
 import pascalCase = require('pascal-case')
 import camelCase = require('camel-case')
-import { Strands } from 'strands'
+import {Strands} from 'strands'
 
-import { hasSecurity, allResources, getSecuritySchemes } from '../support/api'
-import { getUriParametersSnippet } from '../support/resource'
-import { getRequestSnippet, getDisplayName } from '../support/method'
+import {hasSecurity, allResources, getSecuritySchemes} from '../support/api'
+import {getUriParametersSnippet} from '../support/resource'
+import {getRequestSnippet, getDisplayName} from '../support/method'
 
-export default function (api: Api) {
-  const s = new Strands()
-  const projectName = paramCase(api.title)
-  const className = pascalCase(api.title)
+export default function (api: any) {
+    const s = new Strands()
+    const projectName = paramCase(api.title)
+    const className = pascalCase(api.title)
 
-  s.multiline(`# ${api.title}
+    s.multiline(`# ${api.title}
 
 > Browser and node module for making API requests against [${api.title}](${api.baseUri}).
 
@@ -32,8 +32,8 @@ var client = new ${className}()
 \`\`\`
 `)
 
-  if (hasSecurity(api, 'OAuth 2.0')) {
-    s.multiline(`### Authentication
+    if (hasSecurity(api, 'OAuth 2.0')) {
+        s.multiline(`### Authentication
 
 #### OAuth 2.0
 
@@ -48,16 +48,16 @@ var auth = new ${className}.security.<method>({
 
 // Available methods for OAuth 2.0:`)
 
-    for (const scheme of getSecuritySchemes(api)) {
-      if (scheme.type === 'OAuth 2.0') {
-        s.line(` - ${camelCase(scheme.name)}`)
-      }
+        for (const scheme of getSecuritySchemes(api)) {
+            if (scheme.type === 'OAuth 2.0') {
+                s.line(` - ${camelCase(scheme.name)}`)
+            }
+        }
+
+        s.line('```')
     }
 
-    s.line('```')
-  }
-
-  s.multiline(`### Options
+    s.multiline(`### Options
 
 You can set options when you initialize a client or at any time with the \`options\` property. You may also override options per request by passing an object as the last argument of request methods. For example:
 
@@ -91,31 +91,31 @@ Exports \`${className}.form\`, which exposes a cross-platform \`FormData\` inter
 All methods return a HTTP request instance of [Popsicle](https://github.com/blakeembrey/popsicle), which allows the use of promises (and streaming in node).
 `)
 
-  for (const resource of allResources(api)) {
-    for (const method of resource.methods) {
-      s.line(`#### ${getDisplayName(method, resource)}`)
-      s.line()
+    for (const resource of allResources(api)) {
+        for (const method of resource.methods) {
+            s.line(`#### ${getDisplayName(method, resource)}`)
+            s.line()
 
-      if (Object.keys(resource.uriParameters).length) {
-        s.line(getUriParametersSnippet(resource))
-        s.line()
-      }
+            if (Object.keys(resource.uriParameters).length) {
+                s.line(getUriParametersSnippet(resource))
+                s.line()
+            }
 
-      if (method.description) {
-        s.multiline(method.description.trim())
-        s.line()
-      }
+            if (method.description) {
+                s.multiline(method.description.trim())
+                s.line()
+            }
 
-      s.multiline(`\`\`\`js
+            s.multiline(`\`\`\`js
 client.${getRequestSnippet(method, resource)}.then(...)
 \`\`\`
   `)
+        }
     }
-  }
 
-  s.line('## License')
-  s.line()
-  s.line('Apache 2.0')
+    s.line('## License')
+    s.line()
+    s.line('Apache 2.0')
 
-  return s.toString()
+    return s.toString()
 }

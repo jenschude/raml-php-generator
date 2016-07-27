@@ -10,7 +10,7 @@ use GuzzleHttp\Psr7\Response;
 use PhpSpec\ObjectBehavior;
 use Prophecy\Argument;
 
-class ClientSpec extends ObjectBehavior
+class RequestBuilderSpec extends ObjectBehavior
 {
     protected function camelize($verb)
     {
@@ -56,7 +56,7 @@ class ClientSpec extends ObjectBehavior
 
         $this->beConstructedWith($options);
 
-        $response = $this->resources->hello->get();
+        $response = $this->hello()->get();
         $this->validateResponse($response, 'Hello World!');
     }
 
@@ -80,7 +80,7 @@ class ClientSpec extends ObjectBehavior
 
         $this->beConstructedWith($options);
 
-        $response = $this->resources->hello->get();
+        $response = $this->hello()->get();
         $this->validateResponse($response, 'Hello World!');
     }
 
@@ -89,21 +89,21 @@ class ClientSpec extends ObjectBehavior
      */
     function it_should_append_query_string()
     {
-        $response = $this->resources->bounce->url->get(['key' => 'string']);
+        $response = $this->bounce()->url()->get(['key' => 'string']);
 
         $this->validateResponse($response, '/bounce/url?key=string');
     }
 
     function it_should_append_query_string_array()
     {
-        $response = $this->resources->bounce->url->get(null, ['query' => ['key' => [1, 2, 3]]]);
+        $response = $this->bounce()->url()->get(null, ['query' => ['key' => [1, 2, 3]]]);
 
         $this->validateResponse($response, '/bounce/url?key=1&key=2&key=3');
     }
 
     function it_should_merge_body_and_query()
     {
-        $response = $this->resources->bounce->url->get(
+        $response = $this->bounce()->url()->get(
             ['test' => 'test', 'abc' => 123, 'key' => [1, 2, 3]],
             ['query' => ['xyz' => '123']]
         );
@@ -113,7 +113,7 @@ class ClientSpec extends ObjectBehavior
 
     function it_should_be_a_canonical_query()
     {
-        $response = $this->resources->bounce->url->get(
+        $response = $this->bounce()->url()->get(
             null,
             ['query' => ['test' => 'test', 'xyz' => '123', 'abc' => 123, 'key' => [1, 2, 3]]]
         );
@@ -126,7 +126,7 @@ class ClientSpec extends ObjectBehavior
      */
     function it_should_pass_custom_headers_with_the_request()
     {
-        $response = $this->resources->bounce->headers->get(null, ['headers' => ['X-Custom-Header' => 'Custom Header']]);
+        $response = $this->bounce()->headers()->get(null, ['headers' => ['X-Custom-Header' => 'Custom Header']]);
 
         $response->getStatusCode()->shouldBe(200);
         $response->getBody()->__toString()->shouldJsonBeEqualTo('Custom Header', 'x-custom-header');
@@ -134,21 +134,21 @@ class ClientSpec extends ObjectBehavior
 
     function it_should_use_default_headers_from_definition()
     {
-        $response = $this->resources->defaults->headers->get();
+        $response = $this->defaults()->headers()->get();
         $response->getStatusCode()->shouldBe(200);
         $response->getBody()->__toString()->shouldJsonBeEqualTo('Hello World!', 'x-default-header');
     }
 
     function it_should_override_default_headers()
     {
-        $response = $this->resources->defaults->headers->get(null, ['headers' => ['x-default-header' => 'Overridden']]);
+        $response = $this->defaults()->headers()->get(null, ['headers' => ['x-default-header' => 'Overridden']]);
         $response->getStatusCode()->shouldBe(200);
         $response->getBody()->__toString()->shouldJsonBeEqualTo('Overridden', 'x-default-header');
     }
 
     function it_should_override_default_headers_with_uppercase()
     {
-        $response = $this->resources->defaults->headers->get(null, ['headers' => ['X-DEFAULT-HEADER' => 'Overridden']]);
+        $response = $this->defaults()->headers()->get(null, ['headers' => ['X-DEFAULT-HEADER' => 'Overridden']]);
         $response->getStatusCode()->shouldBe(200);
         $response->getBody()->__toString()->shouldJsonBeEqualTo('Overridden', 'x-default-header');
     }
@@ -158,7 +158,7 @@ class ClientSpec extends ObjectBehavior
      */
     function it_should_return_response_headers()
     {
-        $response = $this->resources->get();
+        $response = $this->get();
         $response->getStatusCode()->shouldBe(200);
         $response->getBody()->__toString()->shouldEqual('Success');
         $response->getHeader('X-Powered-By')->shouldEqual(['Express']);
@@ -170,35 +170,35 @@ class ClientSpec extends ObjectBehavior
      */
     function it_should_parse_response_as_text_when_unknown()
     {
-        $response = $this->resources->responses->text->get();
+        $response = $this->responses()->text()->get();
         $response->getStatusCode()->shouldBe(200);
         $response->getBody()->__toString()->shouldEqual('text');
     }
 
     function it_should_parse_response_as_json_when_specified()
     {
-        $response = $this->resources->responses->json->get();
+        $response = $this->responses()->json()->get();
         $response->getStatusCode()->shouldBe(200);
         $response->getBody()->__toString()->shouldJsonBeEqualTo(json_decode('{"json": true}', true));
     }
 
     function it_should_parse_response_urlencoded_simple_query_string()
     {
-        $response = $this->resources->responses->urlEncoded->basic->get();
+        $response = $this->responses()->urlEncoded()->basic()->get();
         $response->getStatusCode()->shouldBe(200);
         $response->getBody()->__toString()->shouldEqual('key=value');
     }
 
     function it_should_parse_response_and_put_duplicate_keys_into_array()
     {
-        $response = $this->resources->responses->urlEncoded->duplicate->post();
+        $response = $this->responses()->urlEncoded()->duplicate()->post();
         $response->getStatusCode()->shouldBe(200);
         $response->getBody()->__toString()->shouldEqual('key=1&key=2&key=3');
     }
 
     function it_should_parse_response_encoded_values_uri_encoded()
     {
-        $response = $this->resources->responses->urlEncoded->escaped->put();
+        $response = $this->responses()->urlEncoded()->escaped()->put();
         $this->validateResponse($response, 'key=Hello%2C%20world!');
     }
 
@@ -207,79 +207,79 @@ class ClientSpec extends ObjectBehavior
      */
     function it_should_support_root_resource()
     {
-        $response = $this->resources->get();
+        $response = $this->get();
         $this->validateResponse($response, 'Success');
     }
 
     function it_should_dynamically_generate_resource_chain()
     {
-        $response = $this->resources->bounce->parameter->variable(123)->get();
+        $response = $this->bounce()->parameter()->variable(123)->get();
         $this->validateResponse($response, '123');
     }
 
     function it_should_output_null_values_as_empty_string()
     {
-        $response = $this->resources->bounce->parameter->variable(null)->get();
+        $response = $this->bounce()->parameter()->variable(null)->get();
         $this->validateResponse($response, '');
     }
 
     function it_should_use_default_value_when_null()
     {
-        $response = $this->resources->defaults->parameter->variable(null)->get();
+        $response = $this->defaults()->parameter()->variable(null)->get();
         $this->validateResponse($response, 'default');
     }
 
     function it_should_support_single_parameter_arguments()
     {
-        $response = $this->resources->parameters->prefix->one(123)->get();
+        $response = $this->parameters()->prefix()->one(123)->get();
         $this->validateResponse($response, '123');
     }
 
     function it_should_support_not_more_arguments_than_defined()
     {
-        $response = $this->resources->parameters->prefix->one(123, 456)->get();
+        $response = $this->parameters()->prefix()->one(123, 456)->get();
         $this->validateResponse($response, '123');
     }
 
     function it_should_dynamically_generate_resource_chain_with_multi_parameteters()
     {
-        $response = $this->resources->parameters->prefix->three(1, 2, 3)->get();
+        $response = $this->parameters()->prefix()->three(1, 2, 3)->get();
         $this->validateResponse($response, '123');
     }
 
     function it_should_support_extensions_in_the_resource_chain_for_static_extensions()
     {
-        $response = $this->resources->extensions->static->json->get();
+        $response = $this->extensions()->static()->json()->get();
         $this->validateResponse($response);
     }
 
     function it_should_support_mediaTypeExtension_parameter()
     {
-        $response = $this->resources->extensions->mediaType->basic->mediaTypeExtension('json')->get();
+        $response = $this->extensions()->mediaType()->basic('json')->get();
         $this->validateResponse($response);
     }
 
     function it_should_have_paths_from_enum_values()
     {
-        $response = $this->resources->extensions->mediaType->enum->json->get();
+        $response = $this->extensions()->mediaType()->enum()->json()->get();
         $this->validateResponse($response);
     }
 
     function it_should_have_paths_from_period_prefixed_enum_values()
     {
-        $response = $this->resources->extensions->mediaType->enumPeriod->xml->get();
+        $response = $this->extensions()->mediaType()->enumPeriod()->xml()->get();
         $this->validateResponse($response);
     }
 
     function it_should_handle_original_route()
     {
-        $response = $this->resources->conflicts->mediaType->route->get();
+        $response = $this->conflicts()->mediaType()->route()->get();
         $this->validateResponse($response);
     }
 
     function it_should_handle_conflict_with_media_type_extension()
     {
-        $response = $this->resources->conflicts->mediaType->mediaTypeExtension('json')->get();
+        $response = $this->conflicts()->mediaType('json')->get();
         $this->validateResponse($response);
     }
 

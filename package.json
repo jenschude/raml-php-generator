@@ -20,7 +20,8 @@
     "test-browser": "browserify -i nock -t envify test/specs/*.js | tape-run --render tap-spec",
     "test-server-open": "node test/support/server.js & echo $! > test.pid",
     "test-server-close": "if [ -f test.pid ]; then kill -9 $(cat test.pid); rm test.pid; fi",
-    "test": "npm run lint && npm run build && npm run generate-client && npm run test-server-open && npm run test-cov && npm run test-browser; npm run test-server-close"
+    "test": "npm run lint && npm run build && npm run generate-client && npm run test-server-open && npm run test-cov && npm run test-browser; npm run test-server-close",
+    "test-spec": "npm run test-server-open && sleep 1 && vendor/bin/phpspec run; npm run test-server-close"
   },
   "standard": {
     "ignore": [
