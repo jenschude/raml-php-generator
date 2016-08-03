@@ -22,7 +22,7 @@ This module depends on [raml-generator](https://github.com/mulesoft-labs/raml-ge
 ### Global
 
 ```
-raml-php-generator api.raml -o js-client
+raml-php-generator api.raml -o php-client
 ```
 
 ### Locally
