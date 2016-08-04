@@ -8,9 +8,14 @@ matrix:
   allow_failures:
     - php: hhvm
 
+cache:
+  directories:
+  - vendor
+  - node_modules
+
 before_script:
   - composer install -o
   - npm install
   - if [ `php-config --vernum` -ge 70000 ] ; then export USE_STRICT_TYPES=true ; fi
 script:
-  - npm run test
+  - npm run test:unit
