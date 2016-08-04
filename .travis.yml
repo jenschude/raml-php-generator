@@ -11,6 +11,6 @@ matrix:
 before_script:
   - composer install -o
   - npm install
-  - if [ `php-config --vernum` -ge 70000 ] ; export USE_STRICT_TYPES=true ; fi
+  - if [ `php-config --vernum` -ge 70000 ] ; then export USE_STRICT_TYPES=true ; fi
 script:
   - npm run test

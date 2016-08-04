@@ -49,11 +49,11 @@ class Resource
         return (string)preg_replace_callback(static::TEMPLATE_REGEXP, function ($matches) use ($defaults, $interpolate) {
             $key = $matches[1];
             if (isset($interpolate[$key]) && $interpolate[$key] != null) {
-                return urlencode($interpolate[$key]);
+                return urlencode((string)$interpolate[$key]);
             }
 
             if (isset($defaults[$key]) && $defaults[$key] != null) {
-                return urlencode($defaults[$key]);
+                return urlencode((string)$defaults[$key]);
             }
 
             return '';
@@ -367,7 +367,7 @@ class RequestBuilder extends Resource
             const constructor = `new ${child.id}($this->getUri() . ${stringify(child.relativeUri)})`;
 
             if (!(withParams[key] == null)) {
-                s.multiline(`    public function with${pascalCase(child.methodName)} (${toUriParameters(withParams[key].uriParameters)})${st() ? ': ' + child.id :''} {
+                s.multiline(`    public function with${pascalCase(child.methodName)} (${toUriParameters(withParams[key].uriParameters)})${st() ? ': ' + withParams[key].id :''} {
         ${toParamsFunction(withParams[key])}
     }`);
             }
