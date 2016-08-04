@@ -8,7 +8,7 @@ import { getDefaultParameters } from '../support/parameters'
 import { hasSecurity, getSecuritySchemes, allResources, nestedResources, NestedMethod, NestedResource } from '../support/api'
 import { isQueryMethod } from '../support/method'
 
-export default function (api: Api): string {
+export default function (api: any): string {
   const s = new Strands()
   const flatTree = allResources(api) // For short-hand annotations.
   const nestedTree = nestedResources(api)

@@ -72,17 +72,120 @@ class Resource
         return $this->uri;
     }
 
-    final protected function build(${st() ? 'string ':''} $method, ${st() ? 'string ':''} $uri, $body = null, array $headers = [])${st() ? ': RequestInterface':''}
+    /**
+     * @param $method
+     * @param $uri
+     * @param mixed $body
+     * @param array $options
+     * @return RequestInterface
+     */
+    final protected function buildRequest(${st() ? 'string ':''} $method, ${st() ? 'string ':''} $uri, $body = null, array $options = [])${st() ? ': RequestInterface':''}
     {
-        return new Request($method, $uri, $headers, $body);
+        $headers = isset($options['headers']) ? $options['headers'] : [];
+        $request = new Request($method, $uri, $headers, $body);
+
+        if (isset($options['query'])) {
+            $params = [];
+            foreach ($options['query'] as $key => $value) {
+                if (!is_array($value)) {
+                    $param = new Parameter($key, $value);
+                    $params[$param->getId()] = $param;
+                } else {
+                    foreach ($value as $data) {
+                        $param = new MultiParameter($key, $data);
+                        $params[$param->getId()] = $param;
+                    }
+                }
+            }
+            $params = array_map(
+                function ($param) {
+                    return (string)$param;
+                },
+                $params
+            );
+            sort($params);
+            $query = implode('&', $params);
+            $uri = $request->getUri()->withQuery($query);
+            $request = $request->withUri($uri);
+        }
+        
+
+        return $request;
+    }
+}
+
+class Parameter
+{
+    protected $key;
+    protected $value;
+
+    public function __construct($key, $value = null)
+    {
+        if (empty($key)) {
+            throw new \\InvalidArgumentException('no key given');
+        }
+        $this->key = $key;
+        $this->value = $value;
+    }
+
+    public function getId()
+    {
+        return $this->key;
+    }
+
+    public function getValue()
+    {
+        return $this->value;
+    }
+
+    public function __toString()
+    {
+        $value = $this->getValue();
+        if (is_null($value)) {
+            $paramStr = $this->key;
+        } elseif (is_bool($value)) {
+            $paramStr = $this->key . '=' . ($value ? 'true' : 'false');
+        } else {
+            $paramStr = $this->key . '=' . urlencode((string)$value);
+        }
+
+        return $paramStr;
+    }
+}
+
+class MultiParameter extends Parameter
+{
+    public function getId()
+    {
+        return $this->__toString();
     }
 }
 
 class RequestBuilder extends Resource
 {
-    public function __construct()
+    public function __construct($options = [])
     {
-        parent::__construct('.');
+        $baseUriParameters = [];
+        if (isset($options['baseUriParameters'])) {
+            $baseUriParameters = $options['baseUriParameters'];
+        }
+        if (isset($options['baseUri'])) {
+            $baseUri = $this->template($options['baseUri'], $baseUriParameters);
+        } else {
+            $baseUri = $this->template(${stringify(api.baseUri)}, ${getDefaultValueArray(api.baseUriParameters)});
+        }
+        parent::__construct(trim($baseUri, '/'));
+    }
+    
+    final public function buildCustom(${st() ? 'string ':''} $method, ${st() ? 'string ':''} $uri, $body = null, array $options = [])${st() ? ': RequestInterface':''}
+    {
+        if (isset($options['uriParameters'])) {
+            $uri = $this->template($this->getUri() . $uri, $options['uriParameters']);
+            unset($options['uriParams']);
+        } else {
+            $uri = $this->getUri() . $uri;
+        }
+        return $this->buildRequest($method, $uri, $body, $options);
     }
 `);
 
@@ -104,14 +207,34 @@ class RequestBuilder extends Resource
             const type = isQueryMethod(method) ? 'query' : 'body';
 
             if (type == 'query') {
-                s.line(`    public function ${camelCase(method.method)} ($options = null)${st() ? ': RequestInterface':''} {`);
-                s.line(`        return $this->build(${stringify(method.method)}, $this->getUri());`)
+                s.line(`    public function ${camelCase(method.method)} (array $query = [], array $options = [])${st() ? ': RequestInterface':''} {`);
+                s.line(`${setDefaultHeader(method.headers)}`);
+                s.multiline(`
+        if (isset($options['query'])) {        
+            $query = array_merge($options['query'], $query);
+        }
+        $options['query'] = $query;`);
+                s.line(`        return $this->buildRequest(${stringify(method.method)}, $this->getUri(), null, $options);`)
             } else {
-                s.line(`    public function ${camelCase(method.method)} ($body = null, $options = null)${st() ? ': RequestInterface':''} {`);
-                s.line(`        return $this->build(${stringify(method.method)}, $this->getUri(), $body);`)
+                s.line(`    public function ${camelCase(method.method)} ($body = null, array $options = [])${st() ? ': RequestInterface':''} {`);
+                s.line(`${setDefaultHeader(method.headers)}`);
+                s.line(`        return $this->buildRequest(${stringify(method.method)}, $this->getUri(), $body, $options);`)
             }
             s.line(`    }`)
         }
+    }
+
+    function setDefaultHeader(headers:any) {
+        const defaultHeader:any = [];
+        if (headers) {
+            for (const key of Object.keys(headers)) {
+                const header:any = headers[key];
+                defaultHeader.push(`        if (!isset($options['headers'][${stringify(key.toLowerCase())}]) && !isset($options['headers'][${stringify(key.toUpperCase())}])) {
+            $options['headers'][${stringify(key.toLowerCase())}] = ${stringify(header.default)};
+        }`);
+            }
+        }
+        return defaultHeader.join(`\n`);
     }
 
     // Split children by "type" of method that needs to be created.
@@ -139,12 +262,27 @@ class RequestBuilder extends Resource
         return new ${child.id}($uri);`
     }
 
+    function getDefaultValueArray(parameters:any) {
+        const params:any = [];
+        if (parameters) {
+            for (const key of Object.keys(parameters)) {
+                const parameter:any = parameters[key];
+                if (parameter.default) {
+                    params.push(`${stringify(key)} => ${stringify(parameter.default)}`);
+                }
+            }
+        }
+        return `[` + params.join(`,\n`) + `]`;
+    }
+
     function setDefaultValues(parameters:any) {
         const params:any = [];
-        for (const key of Object.keys(parameters)) {
-            const parameter:any = parameters[key];
-            if (parameter.default) {
-                params.push(`        if (is_null($${key})) { $${key} = ${stringify(parameter.default)}; }`);
+        if (parameters) {
+            for (const key of Object.keys(parameters)) {
+                const parameter:any = parameters[key];
+                if (parameter.default) {
+                    params.push(`        if (is_null($${key})) { $${key} = ${stringify(parameter.default)}; }`);
+                }
             }
         }
         return params.join(`\n`);
@@ -152,20 +290,24 @@ class RequestBuilder extends Resource
 
     function toArray(parameters:any) {
         const params:any = [];
-        for (const key of Object.keys(parameters)) {
-            params.push(`'${key}' => $${key}`);
+        if (parameters) {
+            for (const key of Object.keys(parameters)) {
+                params.push(`'${key}' => $${key}`);
+            }
         }
         return `[` + params.join(`, `) + `]`;
     }
 
     function toUriParameters(parameters:any) {
         const params:any = [];
-        for (const key of Object.keys(parameters)) {
-            const parameter:any = parameters[key];
-            if (parameter.default) {
-                params.push(`$${key} = ${stringify(parameter.default)}`);
-            } else {
-                params.push(`$${key}`);
+        if (parameters) {
+            for (const key of Object.keys(parameters)) {
+                const parameter:any = parameters[key];
+                if (parameter.default) {
+                    params.push(`$${key} = ${stringify(parameter.default)}`);
+                } else {
+                    params.push(`$${key}`);
+                }
             }
         }
         return params.join(`, `);

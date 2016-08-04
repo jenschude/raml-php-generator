@@ -33,6 +33,14 @@ var jsGenerator = require('raml-php-generator')
 var output = jsGenerator(/* api, data */)
 ```
 
+or
+
+```
+npm build
+node dist/bin.js api.raml -o php-client
+```
+
+
 ## License
 
 Apache License 2.0
