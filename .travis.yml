@@ -1,4 +1,4 @@
-language: php
+language: node_js
 php:
   - 5.6
   - 7.0
