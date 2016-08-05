@@ -1,9 +1,7 @@
 {
   "dependencies": {
-    "any-promise": "registry:npm/any-promise#1.0.0+20160211003958",
-    "blue-tape": "registry:npm/blue-tape#0.1.0+20160322235613",
     "raml-generator": "npm:raml-generator",
-    "xtend": "registry:npm/xtend#4.0.0+20160211003958"
+    "xtend": "registry:npm/xtend"
   },
   "ambientDependencies": {
     "node": "registry:dt/node#4.0.0+20160317120654"
