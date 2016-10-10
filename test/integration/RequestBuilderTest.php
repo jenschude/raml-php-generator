@@ -1,10 +1,13 @@
 <?php
 
 namespace Raml\ApiGenerator\Test;
+
+//use ExampleApi\Client;
 use ExampleApi\RequestBuilder;
 use GuzzleHttp\Client;
 use GuzzleHttp\Handler\MockHandler;
 use GuzzleHttp\HandlerStack;
+use GuzzleHttp\Middleware;
 use GuzzleHttp\Psr7\Response;
 
 /**
@@ -73,7 +76,7 @@ class RequestBuilderTest extends \PHPUnit_Framework_TestCase
         $handler = HandlerStack::create($mock);
         $options = [
             'handler' => $handler,
-            'baseUri' => 'http://google.com/search'
+            'base_uri' => 'http://google.com'
         ];
 
         $client = new Client($options);

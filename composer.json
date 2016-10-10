@@ -5,6 +5,9 @@
         "guzzlehttp/psr7": "^1.1"
     },
     "autoload-dev": {
-        "files": ["test/.tmp/example/index.php"]
+        "psr-4": {
+            "ExampleApi\\": "test/.tmp/example/src/"
+        },
+        "files": ["test/.tmp/example/classes.php"]
     }
 }
