@@ -1,4 +1,4 @@
-import { generator, GeneratorResult } from 'raml-generator'
+import { generator, Generator, GeneratorResult } from 'raml-generator'
 
 import gitignoreTemplate from './templates/.gitignore'
 import composerTemplate from './templates/composer.json'
