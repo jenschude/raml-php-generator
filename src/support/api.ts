@@ -7,6 +7,9 @@ import { getUsedUriParameters, toMethodName } from './resource'
  * Check for existence of a security scheme type.
  */
 export function hasSecurity (api: any, type: string) {
+  if (!api.securitySchemes) {
+    return false;
+  }
   return api.securitySchemes.some((schemes: any) => {
     for (const key of Object.keys(schemes)) {
       if (schemes[key].type === type) {

@@ -57,6 +57,7 @@
     "param-case": "^2.1.0",
     "pascal-case": "^2.0.0",
     "raml-generator": "^1.0.0-3",
+    "raml-1-parser": "^1.0",
     "strands": "^1.0.1",
     "uniqueid": "^1.0.0",
     "xtend": "^4.0.1"
