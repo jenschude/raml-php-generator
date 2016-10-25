@@ -31,51 +31,62 @@ use Psr\\Cache\\CacheItemPoolInterface;
 
 class Client extends HttpClient {
 
-    private $config;
-    
     public function __construct(array $config = [], AbstractProvider $oauthProvider = null, CacheItemPoolInterface $cache = null)
     {
         if (!isset($config['handler'])) {
             $config['handler'] = HandlerStack::create();
         }
-        if (isset($config['credentials'])) {
-            $this->config['credentials'] = $config['credentials'];
-        }
-        
-        $this->setOAuthProvider($config['handler'], $oauthProvider, $cache);
-        parent::__construct($config);
-    }
-    
-    private function setOAuthProvider(HandlerStack $handlerStack, AbstractProvider $provider = null, CacheItemPoolInterface $cache = null)
-    {`);
-
-    supportedSecuritySchemes.forEach((scheme: any, index: number, schemes: any[]) => {
-        const name = camelCase(scheme.name);
-        if (scheme.type === 'OAuth 2.0') {
-            s.multiline(`
-        if (is_null($provider)) {
-            $provider = new TokenProvider(
-                array_merge(
-                    [
-                        'urlAccessToken' => ${stringify(scheme.settings.accessTokenUri)},
-                        'urlAuthorize' => ${stringify(scheme.settings.authorizationUri)},
-                    ],
-                    $this->config['credentials']
-                )
-            );
+        if (!isset($config['credentials'])) {
+            $config['credentials'] = [];
         }
         if (is_null($cache)) {
             $filesystemAdapter = new Local(__DIR__.'/../');
             $filesystem        = new Filesystem($filesystemAdapter);
             $cache = new FilesystemCachePool($filesystem);
-        }
-        $handler = new Oauth2Handler($provider, $cache);
-        $handlerStack->unshift(Middleware::mapRequest($handler), ${stringify(name)});
-        `)
+        }`);
+    supportedSecuritySchemes.forEach((scheme: any, index: number, schemes: any[]) => {
+        const name = camelCase(scheme.name);
+        if (scheme.type === 'OAuth 2.0') {
+            s.multiline(`
+        /**
+         * Configure client for security scheme ${name}
+         */
+        $config['handler']->push(
+            Middleware::mapRequest(
+                $this->getHandler(
+                    ${stringify(name)},
+                    $config,
+                    ${stringify(scheme.settings.accessTokenUri)},
+                    ${stringify(scheme.settings.authorizationUri)},
+                    $cache,
+                    $oauthProvider
+                )
+            ),
+            ${stringify(name)}
+        );`);
         }
     });
-
     s.multiline(`
+        parent::__construct($config);
+    }
+    
+    private function getHandler($name, $config, $accessTokenUrl, $authorizeUrl, CacheItemPoolInterface $cache, AbstractProvider $provider = null) {
+        $credentials = isset($config['credentials'][$name]) ? $config['credentials'][$name] : $config['credentials'];
+        if (isset($config['providers'][$name])) {
+            $provider = $config['providers'][$name];
+        }
+        if (is_null($provider)) {
+            $provider = new TokenProvider(
+                array_merge(
+                    [
+                        'urlAccessToken' => $accessTokenUrl,
+                        'urlAuthorize' => $authorizeUrl,
+                    ],
+                    $credentials
+                )
+            );
+        }
+        return new OAuth2Handler($name, $provider, $cache);
     }
 }
 `);
