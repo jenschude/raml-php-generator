@@ -87,6 +87,7 @@ export interface NestedMethod {
   id: string
   method: string
   headers: any
+  queryParameters: any
 }
 
 /**
@@ -113,7 +114,8 @@ export function nestedResources (api: any): NestedResource {
           node.methods.push({
             id: methodId(),
             method: method.method,
-            headers: method.headers
+            headers: method.headers,
+            queryParameters: method.queryParameters
           })
         }
       }

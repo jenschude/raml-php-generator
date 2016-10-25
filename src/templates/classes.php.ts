@@ -32,7 +32,9 @@ export default function (api:any):string {
     s.multiline(`
 namespace ${pascalCase(api.title)};
 
-use GuzzleHttp\\Psr7\\Request;
+use GuzzleHttp\\Psr7\\Request as HttpRequest;
+use GuzzleHttp\\Psr7\\Uri;
+use GuzzleHttp\\Psr7;
 use Psr\\Http\\Message\\RequestInterface;
 
 class Resource
@@ -67,6 +69,9 @@ class Resource
         $this->uri = $uri;
     }
 
+    /**
+     * @return string
+     */
     final protected function getUri()${st() ? ': string':''}
     {
         return $this->uri;
@@ -79,33 +84,17 @@ class Resource
      * @param array $options
      * @return RequestInterface
      */
-    final protected function buildRequest(${st() ? 'string ':''} $method, ${st() ? 'string ':''} $uri, $body = null, array $options = [])${st() ? ': RequestInterface':''}
+    final protected function buildRequest(${st() ? 'string ':''} $method, ${st() ? 'string ':''} $uri, $body = null, array $options = [], $requestClass = 'Request')${st() ? ': RequestInterface':''}
     {
         $headers = isset($options['headers']) ? $options['headers'] : [];
-        $request = new Request($method, $uri, $headers, $body);
+        $requestClass = ${stringify('\\' + pascalCase(api.title) + '\\')} . $requestClass;
+        /**
+         * @var RequestInterface $request
+         */
+        $request = new $requestClass($method, $uri, $headers, $body);
 
         if (isset($options['query'])) {
-            $params = [];
-            foreach ($options['query'] as $key => $value) {
-                if (!is_array($value)) {
-                    $param = new Parameter($key, $value);
-                    $params[$param->getId()] = $param;
-                } else {
-                    foreach ($value as $data) {
-                        $param = new MultiParameter($key, $data);
-                        $params[$param->getId()] = $param;
-                    }
-                }
-            }
-            $params = array_map(
-                function ($param) {
-                    return (string)$param;
-                },
-                $params
-            );
-            sort($params);
-            $query = implode('&', $params);
-            $uri = $request->getUri()->withQuery($query);
+            $uri = $request->getUri()->withQuery(Psr7\\build_query($options['query']));
             $request = $request->withUri($uri);
         }
         
@@ -114,51 +103,8 @@ class Resource
     }
 }
 
-class Parameter
+class Request extends HttpRequest
 {
-    protected $key;
-    protected $value;
-
-    public function __construct($key, $value = null)
-    {
-        if (empty($key)) {
-            throw new \\InvalidArgumentException('no key given');
-        }
-        $this->key = $key;
-        $this->value = $value;
-    }
-
-    public function getId()
-    {
-        return $this->key;
-    }
-
-    public function getValue()
-    {
-        return $this->value;
-    }
-
-    public function __toString()
-    {
-        $value = $this->getValue();
-        if (is_null($value)) {
-            $paramStr = $this->key;
-        } elseif (is_bool($value)) {
-            $paramStr = $this->key . '=' . ($value ? 'true' : 'false');
-        } else {
-            $paramStr = $this->key . '=' . urlencode((string)$value);
-        }
-
-        return $paramStr;
-    }
-}
-
-class MultiParameter extends Parameter
-{
-    public function getId()
-    {
-        return $this->__toString();
-    }
 }
 
 class RequestBuilder extends Resource
@@ -177,6 +123,9 @@ class RequestBuilder extends Resource
         parent::__construct(trim($baseUri, '/'));
     }
     
+    /**
+     * @return RequestInterface
+     */
     final public function buildCustom(${st() ? 'string ':''} $method, ${st() ? 'string ':''} $uri, $body = null, array $options = [])${st() ? ': RequestInterface':''}
     {
         if (isset($options['uriParameters'])) {
@@ -205,20 +154,25 @@ class RequestBuilder extends Resource
         for (const method of methods) {
             const headers = getDefaultParameters(method.headers);
             const type = isQueryMethod(method) ? 'query' : 'body';
-
+            const requestName = resource.id + pascalCase(method.method) + 'Request';
+            const returnType = method.queryParameters ? requestName : 'RequestInterface';
+            s.multiline(`
+    /**
+     * @return ${returnType}
+     */`);
             if (type == 'query') {
-                s.line(`    public function ${camelCase(method.method)} (array $query = [], array $options = [])${st() ? ': RequestInterface':''} {`);
+                s.line(`    public function ${camelCase(method.method)} (array $query = [], array $options = [])${st() ? ': ' + returnType:''} {`);
                 s.line(`${setDefaultHeader(method.headers)}`);
                 s.multiline(`
         if (isset($options['query'])) {        
             $query = array_merge($options['query'], $query);
         }
         $options['query'] = $query;`);
-                s.line(`        return $this->buildRequest(${stringify(method.method)}, $this->getUri(), null, $options);`)
+                s.line(`        return $this->buildRequest(${stringify(method.method)}, $this->getUri(), null, $options${method.queryParameters ? ', ' + stringify(requestName) : ''});`)
             } else {
-                s.line(`    public function ${camelCase(method.method)} ($body = null, array $options = [])${st() ? ': RequestInterface':''} {`);
+                s.line(`    public function ${camelCase(method.method)} ($body = null, array $options = [])${st() ? ': ' + returnType:''} {`);
                 s.line(`${setDefaultHeader(method.headers)}`);
-                s.line(`        return $this->buildRequest(${stringify(method.method)}, $this->getUri(), $body, $options);`)
+                s.line(`        return $this->buildRequest(${stringify(method.method)}, $this->getUri(), $body, $options${method.queryParameters ? ', ' + stringify(requestName) : ''});`)
             }
             s.line(`    }`)
         }
@@ -229,9 +183,11 @@ class RequestBuilder extends Resource
         if (headers) {
             for (const key of Object.keys(headers)) {
                 const header:any = headers[key];
-                defaultHeader.push(`        if (!isset($options['headers'][${stringify(key.toLowerCase())}]) && !isset($options['headers'][${stringify(key.toUpperCase())}])) {
+                if (header.default) {
+                    defaultHeader.push(`        if (!isset($options['headers'][${stringify(key.toLowerCase())}]) && !isset($options['headers'][${stringify(key.toUpperCase())}])) {
             $options['headers'][${stringify(key.toLowerCase())}] = ${stringify(header.default)};
         }`);
+                }
             }
         }
         return defaultHeader.join(`\n`);
@@ -322,7 +278,11 @@ class RequestBuilder extends Resource
             if (noParams[key] != null) {
                 continue
             }
-            s.line(`    public function with${pascalCase(child.methodName)} (${toUriParameters(child.uriParameters)})${st() ? ': ' + child.id :''} {
+            s.multiline(`
+    /**
+     * @return ${child.id}
+     */
+    public function with${pascalCase(child.methodName)} (${toUriParameters(child.uriParameters)})${st() ? ': ' + child.id :''} {
       ${toParamsFunction(child)}
     }`);
         }
@@ -351,7 +311,35 @@ class RequestBuilder extends Resource
 
         s.line(`}`);
 
+        createRequests(resource);
+
         createChildren(resource.children);
+    }
+
+    function createRequests(resource:NestedResource) {
+        for (const method of resource.methods) {
+            if (method.queryParameters) {
+                const requestName = resource.id + pascalCase(method.method) + 'Request';
+                s.line(`final class ${requestName} extends Request {`);
+                for (const key of Object.keys(method.queryParameters)) {
+                    const parameter = method.queryParameters[key];
+                    s.multiline(`
+    /**
+     * @return ${requestName}
+     */
+    public function with${pascalCase(parameter.name)}($${camelCase(parameter.name)})${st() ? ': ' + requestName:''} {
+        $query = Psr7\\parse_query($this->getUri()->getQuery());
+        if (isset($query[${stringify(parameter.name)}]) && !is_array($query[${stringify(parameter.name)}])) {
+            $query[${stringify(parameter.name)}] = [$query[${stringify(parameter.name)}]];
+        }
+        $query[${stringify(parameter.name)}][] = $${camelCase(parameter.name)};
+        return $this->withUri($this->getUri()->withQuery(Psr7\\build_query($query)));
+    }
+                `);
+                }
+                s.line(`}`);
+            }
+        }
     }
 
     // Generate all children.
@@ -367,11 +355,19 @@ class RequestBuilder extends Resource
             const constructor = `new ${child.id}($this->getUri() . ${stringify(child.relativeUri)})`;
 
             if (!(withParams[key] == null)) {
-                s.multiline(`    public function with${pascalCase(child.methodName)} (${toUriParameters(withParams[key].uriParameters)})${st() ? ': ' + withParams[key].id :''} {
+                s.multiline(`
+    /**
+     * @return ${withParams[key].id}
+     */
+    public function with${pascalCase(child.methodName)} (${toUriParameters(withParams[key].uriParameters)})${st() ? ': ' + withParams[key].id :''} {
         ${toParamsFunction(withParams[key])}
     }`);
             }
-            s.multiline(`    public function ${child.methodName}()${st() ? ': ' + child.id :''} {
+            s.multiline(`
+    /**
+     * @return ${child.id}
+     */
+    public function ${child.methodName}()${st() ? ': ' + child.id :''} {
         return ${constructor};
     }`);
         }
