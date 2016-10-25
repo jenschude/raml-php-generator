@@ -14,7 +14,11 @@ export default function (api:any):string {
     const supportedSecuritySchemes = getSecuritySchemes(api).filter(x => x.type === 'OAuth 2.0')
 
 
-    s.multiline(`<?php
+    s.line(`<?php`);
+    if (st()) {
+        s.line(`declare(strict_types=1);`);
+    }
+    s.multiline(`
 namespace ${pascalCase(api.title)};
 
 use InvalidArgumentException;
@@ -114,7 +118,7 @@ class TokenProvider extends AbstractProvider
      *
      * @return array
      */
-    protected function getConfigurableOptions()
+    protected function getConfigurableOptions()${st() ? ': array':''}
     {
         return array_merge($this->getRequiredOptions(), [
             'accessTokenMethod',
@@ -133,7 +137,7 @@ class TokenProvider extends AbstractProvider
      *
      * @return array
      */
-    protected function getRequiredOptions()
+    protected function getRequiredOptions()${st() ? ': array':''}
     {
         return [
             'urlAccessToken',
@@ -162,7 +166,7 @@ class TokenProvider extends AbstractProvider
     /**
      * @inheritdoc
      */
-    public function getBaseAuthorizationUrl()
+    public function getBaseAuthorizationUrl()${st() ? ': string':''}
     {
         return $this->urlAuthorize;
     }
@@ -170,7 +174,7 @@ class TokenProvider extends AbstractProvider
     /**
      * @inheritdoc
      */
-    public function getBaseAccessTokenUrl(array $params)
+    public function getBaseAccessTokenUrl(array $params)${st() ? ': string':''}
     {
         return $this->urlAccessToken;
     }
@@ -178,7 +182,7 @@ class TokenProvider extends AbstractProvider
     /**
      * @inheritdoc
      */
-    public function getResourceOwnerDetailsUrl(AccessToken $token)
+    public function getResourceOwnerDetailsUrl(AccessToken $token)${st() ? ': string':''}
     {
         return $this->urlResourceOwnerDetails;
     }
@@ -194,7 +198,7 @@ class TokenProvider extends AbstractProvider
     /**
      * @inheritdoc
      */
-    protected function getAccessTokenMethod()
+    protected function getAccessTokenMethod()${st() ? ': string':''}
     {
         return $this->accessTokenMethod ?: parent::getAccessTokenMethod();
     }
@@ -210,7 +214,7 @@ class TokenProvider extends AbstractProvider
     /**
      * @inheritdoc
      */
-    protected function getScopeSeparator()
+    protected function getScopeSeparator()${st() ? ': string':''}
     {
         return $this->scopeSeparator ?: parent::getScopeSeparator();
     }
@@ -230,7 +234,7 @@ class TokenProvider extends AbstractProvider
     /**
      * @inheritdoc
      */
-    protected function createResourceOwner(array $response, AccessToken $token)
+    protected function createResourceOwner(array $response, AccessToken $token)${st() ? ': GenericResourceOwner':''}
     {
         return new GenericResourceOwner($response, $this->responseResourceOwnerId);
     }
@@ -241,7 +245,7 @@ class TokenProvider extends AbstractProvider
      * @param  array $params
      * @return array
      */
-    protected function getAccessTokenOptions(array $params)
+    protected function getAccessTokenOptions(array $params)${st() ? ': array':''}
     {
         $options = [
             'headers' => [
@@ -256,7 +260,7 @@ class TokenProvider extends AbstractProvider
         return $options;
     }
     
-    public function getAccessToken($grant, array $options = [])
+    public function getAccessToken($grant, array $options = [])${st() ? ': AccessToken':''}
     {
         if (!is_null($this->scope) && !isset($options['scope'])) {
             $options['scope'] = $this->scope;

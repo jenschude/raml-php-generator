@@ -70,7 +70,7 @@ class Client extends HttpClient {
         parent::__construct($config);
     }
     
-    private function getHandler($name, $config, $accessTokenUrl, $authorizeUrl, CacheItemPoolInterface $cache, AbstractProvider $provider = null) {
+    private function getHandler($name, $config, $accessTokenUrl, $authorizeUrl, CacheItemPoolInterface $cache, AbstractProvider $provider = null)${st() ? ': OAuth2Handler':''} {
         $credentials = isset($config['credentials'][$name]) ? $config['credentials'][$name] : $config['credentials'];
         if (isset($config['providers'][$name])) {
             $provider = $config['providers'][$name];

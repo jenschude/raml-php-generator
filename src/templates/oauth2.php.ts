@@ -48,15 +48,15 @@ class OAuth2Handler {
         $this->cache = $cache;
     }
     
-    public function __invoke(RequestInterface $request, array $options = []) {
+    public function __invoke(RequestInterface $request, array $options = [])${st() ? ': RequestInterface':''} {
         if ($request->hasHeader('Authorization') || isset($options['securedBy']) && $this->name !== $options['securedBy']) {
             return $request;
         }
         return $request->withHeader('Authorization', 'Bearer ' . $this->getBearerToken());
     }
     
-    private function getBearerToken()
-     {
+    private function getBearerToken()${st() ? ': string':''}
+    {
         $item = null;
         if (!is_null($this->cache)) {
             $item = $this->cache->getItem(sha1('access_token_' . $this->name));
