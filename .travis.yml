@@ -21,4 +21,4 @@ before_script:
   - npm install
   - if [ `php-config --vernum` -ge 70000 ] ; then export USE_STRICT_TYPES=true ; fi
 script:
-  - npm run test:unit
+  - npm test

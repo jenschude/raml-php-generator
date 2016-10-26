@@ -16,9 +16,11 @@
     "build": "rm -rf dist/ && tsc",
     "prepublish": "typings install && npm run build",
     "generate-client": "node dist/bin.js test/support/fixtures/example.raml -o test/.tmp/example && cd test/.tmp/example && composer install",
-    "test-server-open": "node test/support/server.js & echo $! > test.pid",
-    "test-server-close": "if [ -f test.pid ]; then kill -9 $(cat test.pid); rm test.pid; fi",
-    "test:unit": "npm run build && npm run generate-client && npm run test-server-open && sleep 1 && vendor/bin/phpunit test/integration; npm run test-server-close"
+    "test-server-open": "node test/support/server.js & echo $! > test-server.pid",
+    "test-server-close": "if [ -f test-server.pid ]; then kill $(cat test-server.pid); rm test-server.pid; fi",
+    "pretest": "pkill -f \"node test/support/server.js\"; npm run build && npm run generate-client && npm run test-server-open && sleep 1",
+    "posttest": "npm run test-server-close",
+    "test": "vendor/bin/phpunit test/integration"
   },
   "standard": {
     "ignore": [
