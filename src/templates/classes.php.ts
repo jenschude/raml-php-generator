@@ -15,7 +15,7 @@ import {
 } from '../support/api'
 import {isQueryMethod} from '../support/method'
 import {
-    supportStrictTypes as st
+    supportStrictTypes as st, isKeyword
 } from '../support/feature'
 
 export default function (api:any):string {
@@ -380,7 +380,7 @@ class RequestBuilder extends Resource
     /**
      * @return ${child.id}
      */
-    public function ${child.methodName}()${st() ? ': ' + child.id :''} {
+    public function ${isKeyword(child.methodName) ? '_' : ''}${camelCase(child.methodName)}()${st() ? ': ' + child.id :''} {
         return ${constructor};
     }`);
         }

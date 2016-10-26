@@ -323,7 +323,7 @@ class RequestBuilderTest extends \PHPUnit_Framework_TestCase
      */
     function it_should_support_extensions_in_the_resource_chain_for_static_extensions()
     {
-        $request = $this->getBuilder()->extensions()->static()->json()->get();
+        $request = $this->getBuilder()->extensions()->_static()->json()->get();
         $this->validateRequest($request);
     }
 
