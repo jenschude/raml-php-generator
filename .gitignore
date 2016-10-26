@@ -1,9 +1,12 @@
-node_modules
-bower_components
-coverage
+/node_modules/
+/coverage/
 .DS_Store
 npm-debug.log
 .tmp
-vendor
+/typings/
+/dist/
+/vendor
+.tmp
 composer.phar
 .idea
+build
