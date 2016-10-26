@@ -5,7 +5,7 @@ version: 1.0
 baseUri: http://localhost:{port}
 
 uses:
-  client: !include ../../../node_modules/raml-generator/annotations.raml
+  client: ../../../node_modules/raml-generator/annotations.raml
 
 documentation:
   - title: About
@@ -20,7 +20,7 @@ baseUriParameters:
     default: 4567
 
 securitySchemes:
-  - oauth_2_0:
+  oauth_2_0:
       type: OAuth 2.0
       describedBy:
         headers:
@@ -39,24 +39,24 @@ securitySchemes:
       settings:
         authorizationUri: https://localhost:4567/auth/oauth2/authorize
         accessTokenUri: https://localhost:4567/auth/oauth2/access_token
-        authorizationGrants: [ code, token, owner, credentials ]
+        authorizationGrants: [ authorization_code, implicit, password, client_credentials ]
         scopes: [ user ]
 
 traits:
-  - success:
+  success:
       responses:
         200:
           body:
             "text/html":
               example: Success
-  - name:
+  name:
       description: |
         Respond by saying "Hello" back to the user.
       queryParameters:
         name:
           type: string
           default: World
-  - helloWorld:
+  helloWorld:
       responses:
         200:
           body:
@@ -65,7 +65,7 @@ traits:
                 Hello World!
 
 resourceTypes:
-  - methods:
+  methods:
       description: Implements all RESTful request verbs.
       get:
       put:

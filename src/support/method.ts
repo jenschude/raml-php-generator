@@ -1,6 +1,6 @@
 import camelCase = require('camel-case')
 import { toMethodName, getUsedUriParameters } from './resource'
-
+import pascalCase = require("pascal-case");
 /**
  * Check if a method should export query string or body special handling.
  */
@@ -18,7 +18,7 @@ export function getRequestSnippet (method: any, resource: any) {
     const methodName = method.annotations['client.methodName'].structuredValue
 
     if (Object.keys(resource.uriParameters).length) {
-      return `${methodName}([uriParameters, [${type}, [options]]])`
+      return `with${pascalCase(methodName)}([uriParameters, [${type}, [options]]])`
     }
 
     return `${methodName}([${type}, [options]])`
@@ -31,11 +31,11 @@ export function getRequestSnippet (method: any, resource: any) {
     const uriParams = Object.keys(getUsedUriParameters(part, resource.uriParameters))
 
     if (uriParams.length) {
-      return `${methodName}({ ${uriParams.join(', ')} })`
+      return `with${pascalCase(methodName)}('${uriParams.join('\', \'')}')`
     }
 
     return `${methodName}`
-  }).join('.') + `.${camelCase(method.method)}([${type}, [options]])`
+  }).join('->') + `->${camelCase(method.method)}($${type} = null, $options = [])`
 }
 
 /**

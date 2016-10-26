@@ -10,7 +10,7 @@ import {getRequestSnippet, getDisplayName} from '../support/method'
 
 export default function (api: any) {
     const s = new Strands()
-    const projectName = paramCase(api.title)
+    const projectName = paramCase(api.title) + '/raml-php-sdk';
     const className = pascalCase(api.title)
 
     s.multiline(`# ${api.title}
@@ -20,15 +20,17 @@ export default function (api: any) {
 ## Installation
 
 \`\`\`sh
-npm install ${projectName} --save
+composer require ${projectName}
 \`\`\`
 
 ## Usage
 
-\`\`\`js
-var ${className} = require('${projectName}')
+\`\`\`php
+namespace ${pascalCase(api.title)};
 
-var client = new ${className}()
+require_once __DIR__ . '/vendor/autoload.php';
+
+$client = new Client();
 \`\`\`
 `)
 
@@ -37,14 +39,15 @@ var client = new ${className}()
 
 #### OAuth 2.0
 
-This API supports authentication with [OAuth 2.0](https://github.com/mulesoft/js-client-oauth2). Initialize the \`OAuth2\` instance with the application client id, client secret and a redirect uri to authenticate with users.
+This API supports authentication with [OAuth 2.0](https://github.com/thephpleague/oauth2-client). Initialize the \`OAuth2\` instance with the application client id, client secret and a redirect uri to authenticate with users.
 
-\`\`\`js
-var auth = new ${className}.security.<method>({
-  clientId:     '123',
-  clientSecret: 'abc',
-  redirectUri:  'http://example.com/auth/callback'
-});
+\`\`\`php
+$credentials = [
+    'clientId' => 'your client id',
+    'clientSecret' => 'your client secret'
+];
+
+$client = new Client(['credentials' => $credentials]);
 
 // Available methods for OAuth 2.0:`)
 
@@ -57,38 +60,18 @@ var auth = new ${className}.security.<method>({
         s.line('```')
     }
 
-    s.multiline(`### Options
-
-You can set options when you initialize a client or at any time with the \`options\` property. You may also override options per request by passing an object as the last argument of request methods. For example:
-
-\`\`\`javascript
-var client = new ${className}({ ... })
-
-client('GET', '/', {
-  baseUri: 'http://example.com',
-  headers: {
-    'Content-Type': 'application/json'
-  }
-})
-\`\`\`
-
+    s.multiline(`
 #### Base URI
 
-You can override the base URI by setting the \`baseUri\` property, or initializing a client with a base URI. For example:
+You can override the base URI by setting the \`baseUri\` property, or initializing a request builder with a base URI. For example:
 
-\`\`\`javascript
-new ${className}({
-  baseUri: 'https://example.com'
-});
+\`\`\`php
+$builder =  new RequestBuilder(['baseUri' => 'http://google.com/search']);
 \`\`\`
-
-### Helpers
-
-Exports \`${className}.form\`, which exposes a cross-platform \`FormData\` interface that can be used with request bodies.
 
 ### Methods
 
-All methods return a HTTP request instance of [Popsicle](https://github.com/blakeembrey/popsicle), which allows the use of promises (and streaming in node).
+All methods return a HTTP request instance of Guzzle [PSR-7](https://github.com/guzzle/psr7).
 `)
 
     for (const resource of allResources(api)) {
@@ -106,8 +89,10 @@ All methods return a HTTP request instance of [Popsicle](https://github.com/blak
                 s.line()
             }
 
-            s.multiline(`\`\`\`js
-client.${getRequestSnippet(method, resource)}.then(...)
+            s.multiline(`\`\`\`php
+$builder =  new RequestBuilder();
+$request = $builder->${getRequestSnippet(method, resource)};
+$response = $client->send($request);
 \`\`\`
   `)
         }
@@ -115,7 +100,7 @@ client.${getRequestSnippet(method, resource)}.then(...)
 
     s.line('## License')
     s.line()
-    s.line('Apache 2.0')
+    s.line('MIT')
 
     return s.toString()
 }

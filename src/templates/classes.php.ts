@@ -94,6 +94,7 @@ class Resource
         $request = new $requestClass($method, $uri, $headers, $body);
 
         if (isset($options['query'])) {
+            ksort($options['query']);
             $uri = $request->getUri()->withQuery(Psr7\\build_query($options['query']));
             $request = $request->withUri($uri);
         }
@@ -161,9 +162,12 @@ class RequestBuilder extends Resource
      * @return ${returnType}
      */`);
             if (type == 'query') {
-                s.line(`    public function ${camelCase(method.method)} (array $query = [], array $options = [])${st() ? ': ' + returnType:''} {`);
+                s.line(`    public function ${camelCase(method.method)} ($query = null, array $options = [])${st() ? ': ' + returnType:''} {`);
                 s.line(`${setDefaultHeader(method.headers)}`);
                 s.multiline(`
+        if (!is_array($query)) {
+            $query = Psr7\\parse_query($query);
+        }
         if (isset($options['query'])) {        
             $query = array_merge($options['query'], $query);
         }
@@ -340,6 +344,7 @@ class RequestBuilder extends Resource
             $this->queryParts[${stringify(parameter.name)}] = [$this->queryParts[${stringify(parameter.name)}]];
         }
         $this->queryParts[${stringify(parameter.name)}][] = $${camelCase(parameter.name)};
+        ksort($this->queryParts);
         $this->query = Psr7\\build_query($this->queryParts);
         return $this->withUri($this->getUri()->withQuery($this->query));
     }

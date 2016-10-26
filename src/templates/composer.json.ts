@@ -13,8 +13,9 @@ import {
 export default function (api:any) {
     let namespace:any = {};
     namespace[pascalCase(api.title) + '\\'] = "src/";
+    const packageName = paramCase(api.title) + '/raml-php-sdk';
     return `${JSON.stringify({
-        name: paramCase(api.title),
+        name: packageName,
         description: api.description,
         autoload: {
             files: [
