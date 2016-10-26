@@ -320,7 +320,11 @@ class RequestBuilder extends Resource
         for (const method of resource.methods) {
             if (method.queryParameters) {
                 const requestName = resource.id + pascalCase(method.method) + 'Request';
-                s.line(`final class ${requestName} extends Request {`);
+                s.multiline(`final class ${requestName} extends Request {
+
+    private $query;
+    private $queryParts;`);
+
                 for (const key of Object.keys(method.queryParameters)) {
                     const parameter = method.queryParameters[key];
                     s.multiline(`
@@ -328,12 +332,16 @@ class RequestBuilder extends Resource
      * @return ${requestName}
      */
     public function with${pascalCase(parameter.name)}($${camelCase(parameter.name)})${st() ? ': ' + requestName:''} {
-        $query = Psr7\\parse_query($this->getUri()->getQuery());
-        if (isset($query[${stringify(parameter.name)}]) && !is_array($query[${stringify(parameter.name)}])) {
-            $query[${stringify(parameter.name)}] = [$query[${stringify(parameter.name)}]];
+        $query = $this->getUri()->getQuery();
+        if ($this->query !== $query) {
+            $this->queryParts = Psr7\\parse_query($query);
         }
-        $query[${stringify(parameter.name)}][] = $${camelCase(parameter.name)};
-        return $this->withUri($this->getUri()->withQuery(Psr7\\build_query($query)));
+        if (isset($this->queryParts[${stringify(parameter.name)}]) && !is_array($this->queryParts[${stringify(parameter.name)}])) {
+            $this->queryParts[${stringify(parameter.name)}] = [$this->queryParts[${stringify(parameter.name)}]];
+        }
+        $this->queryParts[${stringify(parameter.name)}][] = $${camelCase(parameter.name)};
+        $this->query = Psr7\\build_query($this->queryParts);
+        return $this->withUri($this->getUri()->withQuery($this->query));
     }
                 `);
                 }
