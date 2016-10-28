@@ -7,6 +7,7 @@ import {Strands} from 'strands'
 import {hasSecurity, allResources, getSecuritySchemes} from '../support/api'
 import {getUriParametersSnippet} from '../support/resource'
 import {getRequestSnippet, getDisplayName} from '../support/method'
+import {toNamespace} from "../support/feature";
 
 export default function (api: any) {
     const s = new Strands()
@@ -26,7 +27,7 @@ composer require ${projectName}
 ## Usage
 
 \`\`\`php
-namespace ${pascalCase(api.title)};
+namespace ${toNamespace(api.title)};
 
 require_once __DIR__ . '/vendor/autoload.php';
 

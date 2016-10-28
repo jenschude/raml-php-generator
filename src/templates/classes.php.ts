@@ -15,7 +15,7 @@ import {
 } from '../support/api'
 import {isQueryMethod} from '../support/method'
 import {
-    supportStrictTypes as st, isKeyword
+    supportStrictTypes as st, isKeyword, toNamespace
 } from '../support/feature'
 
 export default function (api:any):string {
@@ -30,7 +30,7 @@ export default function (api:any):string {
         s.line(`declare(strict_types=1);`);
     }
     s.multiline(`
-namespace ${pascalCase(api.title)};
+namespace ${toNamespace(api.title)};
 
 use GuzzleHttp\\Psr7\\Request as HttpRequest;
 use GuzzleHttp\\Psr7\\Uri;
@@ -87,7 +87,7 @@ class Resource
     final protected function buildRequest(${st() ? 'string ':''} $method, ${st() ? 'string ':''} $uri, $body = null, array $options = [], $requestClass = 'Request')${st() ? ': RequestInterface':''}
     {
         $headers = isset($options['headers']) ? $options['headers'] : [];
-        $requestClass = ${stringify('\\' + pascalCase(api.title) + '\\')} . $requestClass;
+        $requestClass = ${stringify('\\' + toNamespace(api.title) + '\\')} . $requestClass;
         /**
          * @var RequestInterface $request
          */

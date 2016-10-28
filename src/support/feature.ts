@@ -1,7 +1,13 @@
+import pascalCase = require("pascal-case");
+
 declare var process: any;
 
 export function supportStrictTypes () {
     return process.env.USE_STRICT_TYPES == 'true';
+}
+
+export function toNamespace(apiTitle: string) {
+    return pascalCase(apiTitle) + '\\Raml';
 }
 
 export function isKeyword(keyword: string) {

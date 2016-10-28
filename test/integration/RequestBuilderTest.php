@@ -3,7 +3,7 @@
 namespace Raml\ApiGenerator\Test;
 
 //use ExampleApi\Client;
-use ExampleApi\RequestBuilder;
+use ExampleApi\Raml\RequestBuilder;
 use GuzzleHttp\Client;
 use GuzzleHttp\Handler\MockHandler;
 use GuzzleHttp\HandlerStack;

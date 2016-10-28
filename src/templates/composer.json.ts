@@ -6,13 +6,13 @@ import {Api} from 'raml-generator'
 import {hasSecurity} from '../support/api'
 
 import {
-    supportStrictTypes as st
+    supportStrictTypes as st, toNamespace
 } from '../support/feature'
 
 
 export default function (api:any) {
     let namespace:any = {};
-    namespace[pascalCase(api.title) + '\\'] = "src/";
+    namespace[toNamespace(api.title) + '\\'] = "src/";
     const packageName = paramCase(api.title) + '/raml-php-sdk';
     return `${JSON.stringify({
         name: packageName,

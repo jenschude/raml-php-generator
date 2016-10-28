@@ -5,7 +5,7 @@ import camelCase = require('camel-case')
 import stringify = require('javascript-stringify')
 import { hasSecurity, getSecuritySchemes, allResources, nestedResources, NestedMethod, NestedResource } from '../support/api'
 import {
-    supportStrictTypes as st
+    supportStrictTypes as st, toNamespace
 } from '../support/feature'
 
 
@@ -18,7 +18,7 @@ export default function (api:any):string {
         s.line(`declare(strict_types=1);`);
     }
     s.multiline(`
-namespace ${pascalCase(api.title)};
+namespace ${toNamespace(api.title)};
 
 use Cache\\Adapter\\Filesystem\\FilesystemCachePool;
 use GuzzleHttp\\Client as HttpClient;
