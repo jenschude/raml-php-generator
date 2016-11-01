@@ -32,7 +32,7 @@ export default function (api:any):string {
     s.multiline(`
 namespace ${toNamespace(api.title)};
 
-use GuzzleHttp\\Psr7\\Request as HttpRequest;
+use GuzzleHttp\\Psr7\\Request;
 use GuzzleHttp\\Psr7\\Uri;
 use GuzzleHttp\\Psr7;
 use Psr\\Http\\Message\\RequestInterface;
@@ -84,10 +84,9 @@ class Resource
      * @param array $options
      * @return RequestInterface
      */
-    final protected function buildRequest(${st() ? 'string ':''} $method, ${st() ? 'string ':''} $uri, $body = null, array $options = [], $requestClass = 'Request')${st() ? ': RequestInterface':''}
+    final protected function buildRequest(${st() ? 'string ':''} $method, ${st() ? 'string ':''} $uri, $body = null, array $options = [], $requestClass = Request::class)${st() ? ': RequestInterface':''}
     {
         $headers = isset($options['headers']) ? $options['headers'] : [];
-        $requestClass = ${stringify('\\' + toNamespace(api.title) + '\\')} . $requestClass;
         /**
          * @var RequestInterface $request
          */
@@ -102,10 +101,6 @@ class Resource
 
         return $request;
     }
-}
-
-class Request extends HttpRequest
-{
 }
 
 class RequestBuilder extends Resource
@@ -172,11 +167,11 @@ class RequestBuilder extends Resource
             $query = array_merge($options['query'], $query);
         }
         $options['query'] = $query;`);
-                s.line(`        return $this->buildRequest(${stringify(method.method)}, $this->getUri(), null, $options${method.queryParameters ? ', ' + stringify(requestName) : ''});`)
+                s.line(`        return $this->buildRequest(${stringify(method.method)}, $this->getUri(), null, $options${method.queryParameters ? ', ' + requestName + '::class': ''});`)
             } else {
                 s.line(`    public function ${camelCase(method.method)} ($body = null, array $options = [])${st() ? ': ' + returnType:''} {`);
                 s.line(`${setDefaultHeader(method.headers)}`);
-                s.line(`        return $this->buildRequest(${stringify(method.method)}, $this->getUri(), $body, $options${method.queryParameters ? ', ' + stringify(requestName) : ''});`)
+                s.line(`        return $this->buildRequest(${stringify(method.method)}, $this->getUri(), $body, $options${method.queryParameters ? ', ' + requestName + '::class' : ''});`)
             }
             s.line(`    }`)
         }
