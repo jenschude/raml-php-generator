@@ -355,7 +355,6 @@ class RequestBuilder extends Resource
                             }
                         );
                     }
-                    console.log(placeHolders);
                     s.multiline(`
     /**
      * @return ${requestName}
