@@ -268,6 +268,26 @@ class RequestBuilder extends Resource
         return params.join(`, `);
     }
 
+    function toArgumentArray(parameters:any, position = 1) {
+        const params:any = [];
+        if (parameters) {
+            parameters.forEach(function (parameter: any) {
+                params.push(`$${parameter[position]}`);
+            });
+        }
+        return params.join(`, `);
+    }
+
+    function toPatternArray(parameters:any, position = 0) {
+        const params:any = [];
+        if (parameters) {
+            parameters.forEach(function (parameter: any) {
+                params.push(`${stringify('/' + parameter[position] + '/')}`);
+            });
+        }
+        return params.join(`, `);
+    }
+
     // Create prototype resources.
     function createProtoResources(withParams:KeyedNestedResources, noParams:KeyedNestedResources, id:string) {
         for (const key of Object.keys(withParams)) {
@@ -326,19 +346,34 @@ class RequestBuilder extends Resource
 
                 for (const key of Object.keys(method.queryParameters)) {
                     const parameter = method.queryParameters[key];
+                    const result = parameter.name.match(/<<([^>]*)>>/g);
+                    let placeHolders: any = [];
+                    if (result && result.length > 0) {
+                        result.forEach(
+                            function (entry: string) {
+                                placeHolders.push(entry.match('<<([^>]*)>>'));
+                            }
+                        );
+                    }
+                    console.log(placeHolders);
                     s.multiline(`
     /**
      * @return ${requestName}
      */
-    public function with${pascalCase(parameter.name)}($${camelCase(parameter.name)})${st() ? ': ' + requestName:''} {
+    public function with${pascalCase(parameter.name)}(${placeHolders.length > 0 ? toArgumentArray(placeHolders) + ', ': ''}$${camelCase(parameter.name)})${st() ? ': ' + requestName:''} {
         $query = $this->getUri()->getQuery();
         if ($this->query !== $query) {
             $this->queryParts = Psr7\\parse_query($query);
+        }`);
+                    if (placeHolders.length > 0) {
+                        s.line(`        $parameterName = preg_replace([${toPatternArray(placeHolders)}], [${toArgumentArray(placeHolders)}], ${stringify(parameter.name)});`)
+                    } else {
+                        s.line(`        $parameterName = ${stringify(parameter.name)};`)
+                    }
+                    s.multiline(`        if (isset($this->queryParts[$parameterName]) && !is_array($this->queryParts[$parameterName])) {
+            $this->queryParts[$parameterName] = [$this->queryParts[$parameterName]];
         }
-        if (isset($this->queryParts[${stringify(parameter.name)}]) && !is_array($this->queryParts[${stringify(parameter.name)}])) {
-            $this->queryParts[${stringify(parameter.name)}] = [$this->queryParts[${stringify(parameter.name)}]];
-        }
-        $this->queryParts[${stringify(parameter.name)}][] = $${camelCase(parameter.name)};
+        $this->queryParts[$parameterName][] = $${camelCase(parameter.name)};
         ksort($this->queryParts);
         $this->query = Psr7\\build_query($this->queryParts);
         return $this->withUri($this->getUri()->withQuery($this->query));
