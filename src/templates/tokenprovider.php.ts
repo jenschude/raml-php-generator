@@ -21,6 +21,7 @@ export default function (api:any):string {
     s.multiline(`
 namespace ${toNamespace(api.title)};
 
+use GuzzleHttp\\Psr7\\Request;
 use InvalidArgumentException;
 use League\\OAuth2\\Client\\Provider\\AbstractProvider;
 use League\\OAuth2\\Client\\Provider\\Exception\\IdentityProviderException;
@@ -239,25 +240,13 @@ class TokenProvider extends AbstractProvider
         return new GenericResourceOwner($response, $this->responseResourceOwnerId);
     }
 
-    /**
-     * Builds request options used for requesting an access token.
-     *
-     * @param  array $params
-     * @return array
-     */
-    protected function getAccessTokenOptions(array $params)${st() ? ': array':''}
+    protected function getAccessTokenRequest(array $params)${st() ? ': Request':''}
     {
-        $options = [
-            'headers' => [
-                'content-type' => 'application/x-www-form-urlencoded',
-                'authorization' => 'Basic ' . base64_encode($params['client_id'] . ':' . $params['client_secret'])
-            ]
-        ];
-        if ($this->getAccessTokenMethod() === self::METHOD_POST) {
-            $options['body'] = $this->getAccessTokenBody($params);
-        }
+        $request = parent::getAccessTokenRequest($params);
+        $uri = $request->getUri()
+            ->withUserInfo($this->clientId, $this->clientSecret);
 
-        return $options;
+        return $request->withUri($uri);
     }
     
     public function getAccessToken($grant, array $options = [])${st() ? ': AccessToken':''}
