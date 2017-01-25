@@ -16,7 +16,7 @@ export default function (api: any) {
 
     s.multiline(`# ${api.title}
 
-> Browser and node module for making API requests against [${api.title}](${api.baseUri}).
+> Client and Request Builder for making API requests against [${api.title}](${api.baseUri}).
 
 ## Installation
 

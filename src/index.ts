@@ -15,7 +15,6 @@ export const client = generator({
     'composer.json': composerTemplate,
     'README.md': readmeTemplate,
     'classes.php': classesPhpTemplate,
-    'index.js': indexTemplate,
     'src/Client.php': clientTemplate,
     'src/OAuth2Handler.php': handlerTemplate,
     'src/TokenProvider.php': providerTemplate

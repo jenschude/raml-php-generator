@@ -17,6 +17,7 @@ export default function (api:any) {
     return `${JSON.stringify({
         name: packageName,
         description: api.description,
+        license: "MIT",
         autoload: {
             files: [
                 "classes.php"

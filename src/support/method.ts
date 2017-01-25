@@ -34,7 +34,7 @@ export function getRequestSnippet (method: any, resource: any) {
       return `with${pascalCase(methodName)}('${uriParams.join('\', \'')}')`
     }
 
-    return `${methodName}`
+    return `${methodName}()`
   }).join('->') + `->${camelCase(method.method)}($${type} = null, $options = [])`
 }
 
