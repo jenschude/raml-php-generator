@@ -105,7 +105,10 @@ class Resource
 
 class RequestBuilder extends Resource
 {
-    public function __construct($options = [])
+    /**
+     * @param array $options
+     */
+    public function __construct(array $options = [])
     {
         $baseUriParameters = [];
         if (isset($options['baseUriParameters'])) {
@@ -120,9 +123,13 @@ class RequestBuilder extends Resource
     }
     
     /**
+     * @param string $method
+     * @param string $uri
+     * @param null $body
+     * @param array $options
      * @return RequestInterface
      */
-    final public function buildCustom(${st() ? 'string ':''} $method, ${st() ? 'string ':''} $uri, $body = null, array $options = [])${st() ? ': RequestInterface':''}
+    final public function buildCustom(${st() ? 'string':''} $method, ${st() ? 'string':''} $uri, $body = null, array $options = [])${st() ? ': RequestInterface':''}
     {
         if (isset($options['uriParameters'])) {
             $uri = $this->template($this->getUri() . $uri, $options['uriParameters']);
@@ -152,12 +159,14 @@ class RequestBuilder extends Resource
             const type = isQueryMethod(method) ? 'query' : 'body';
             const requestName = resource.id + pascalCase(method.method) + 'Request';
             const returnType = method.queryParameters ? requestName : 'RequestInterface';
-            s.multiline(`
+            if (type == 'query') {
+                s.multiline(`
     /**
+     * @param $query
+     * @param array $options
      * @return ${returnType}
      */`);
-            if (type == 'query') {
-                s.line(`    public function ${camelCase(method.method)} ($query = null, array $options = [])${st() ? ': ' + returnType:''} {`);
+                s.line(`    public function ${camelCase(method.method)}($query = null, array $options = [])${st() ? ': ' + returnType:''} {`);
                 s.line(`${setDefaultHeader(method.headers)}`);
                 s.multiline(`
         if (!is_array($query)) {
@@ -169,7 +178,13 @@ class RequestBuilder extends Resource
         $options['query'] = $query;`);
                 s.line(`        return $this->buildRequest(${stringify(method.method)}, $this->getUri(), null, $options${method.queryParameters ? ', ' + requestName + '::class': ''});`)
             } else {
-                s.line(`    public function ${camelCase(method.method)} ($body = null, array $options = [])${st() ? ': ' + returnType:''} {`);
+                s.multiline(`
+    /**
+     * @param $body
+     * @param array $options
+     * @return ${returnType}
+     */`);
+                s.line(`    public function ${camelCase(method.method)}($body = null, array $options = [])${st() ? ': ' + returnType:''} {`);
                 s.line(`${setDefaultHeader(method.headers)}`);
                 s.line(`        return $this->buildRequest(${stringify(method.method)}, $this->getUri(), $body, $options${method.queryParameters ? ', ' + requestName + '::class' : ''});`)
             }
@@ -298,10 +313,13 @@ class RequestBuilder extends Resource
                 continue
             }
             s.multiline(`
-    /**
-     * @return ${child.id}
+    /**`);
+            for(const parameter of Object.keys(child.uriParameters)) {
+                s.line(`     * @param $${parameter}`)
+            }
+            s.multiline(`     * @return ${child.id}
      */
-    public function with${pascalCase(child.methodName)} (${toUriParameters(child.uriParameters)})${st() ? ': ' + child.id :''} {
+    public function with${pascalCase(child.methodName)}(${toUriParameters(child.uriParameters)})${st() ? ': ' + child.id :''} {
       ${toParamsFunction(child)}
     }`);
         }
@@ -356,7 +374,12 @@ class RequestBuilder extends Resource
                         );
                     }
                     s.multiline(`
-    /**
+    /**`);
+                    for(const placeHolder of placeHolders) {
+                        s.line(`     * @param $${placeHolder[1]}`)
+                    }
+
+                    s.multiline(`     * @param $${camelCase(parameter.name)}
      * @return ${requestName}
      */
     public function with${pascalCase(parameter.name)}(${placeHolders.length > 0 ? toArgumentArray(placeHolders) + ', ': ''}$${camelCase(parameter.name)})${st() ? ': ' + requestName:''} {
@@ -398,10 +421,13 @@ class RequestBuilder extends Resource
 
             if (!(withParams[key] == null)) {
                 s.multiline(`
-    /**
-     * @return ${withParams[key].id}
+    /**`);
+                for(const parameter of Object.keys(withParams[key].uriParameters)) {
+                    s.line(`     * @param $${parameter}`)
+                }
+                s.multiline(`     * @return ${withParams[key].id}
      */
-    public function with${pascalCase(child.methodName)} (${toUriParameters(withParams[key].uriParameters)})${st() ? ': ' + withParams[key].id :''} {
+    public function with${pascalCase(child.methodName)}(${toUriParameters(withParams[key].uriParameters)})${st() ? ': ' + withParams[key].id :''} {
         ${toParamsFunction(withParams[key])}
     }`);
             }
