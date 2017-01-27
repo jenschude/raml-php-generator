@@ -32,6 +32,9 @@ export default function (api:any) {
             "psr/cache": "^1.0",
             "cache/adapter-common": "^0.3",
             "cache/filesystem-adapter": "^0.3"
+        },
+        "require-dev": {
+            "monolog/monolog": "^1.3"
         }
     }, null, 2)}\n`
 }
