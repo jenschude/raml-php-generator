@@ -14,9 +14,12 @@ export default function (api: any) {
     const projectName = paramCase(api.title) + '/raml-php-sdk';
     const className = pascalCase(api.title)
 
-    s.multiline(`# ${api.title}
+    s.multiline(`
+> This package has been generated using [raml-php-generator](https://github.com/jayS-de/raml-php-generator)
 
-> Client and Request Builder for making API requests against [${api.title}](${api.baseUri}).
+# ${api.title}
+
+Client and Request Builder for making API requests against [${api.title}](${api.baseUri}).
 
 ## Installation
 
