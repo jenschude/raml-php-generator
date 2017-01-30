@@ -33,7 +33,6 @@ export default function (api:any):string {
 namespace ${toNamespace(api.title)};
 
 use GuzzleHttp\\Psr7\\Request;
-use GuzzleHttp\\Psr7\\Uri;
 use GuzzleHttp\\Psr7;
 use Psr\\Http\\Message\\RequestInterface;
 
@@ -82,6 +81,7 @@ class Resource
      * @param $uri
      * @param mixed $body
      * @param array $options
+     * @param string $requestClass
      * @return RequestInterface
      */
     final protected function buildRequest(${st() ? 'string ':''} $method, ${st() ? 'string ':''} $uri, $body = null, array $options = [], $requestClass = ApiRequest::class)${st() ? ': RequestInterface':''}
