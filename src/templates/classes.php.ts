@@ -84,7 +84,7 @@ class Resource
      * @param array $options
      * @return RequestInterface
      */
-    final protected function buildRequest(${st() ? 'string ':''} $method, ${st() ? 'string ':''} $uri, $body = null, array $options = [], $requestClass = Request::class)${st() ? ': RequestInterface':''}
+    final protected function buildRequest(${st() ? 'string ':''} $method, ${st() ? 'string ':''} $uri, $body = null, array $options = [], $requestClass = ApiRequest::class)${st() ? ': RequestInterface':''}
     {
         $headers = isset($options['headers']) ? $options['headers'] : [];
         /**
@@ -101,6 +101,10 @@ class Resource
 
         return $request;
     }
+}
+
+class ApiRequest extends Request {
+    const API_PATH = '';
 }
 
 class RequestBuilder extends Resource
@@ -145,7 +149,8 @@ class RequestBuilder extends Resource
     s.multiline(`
 }`);
 
-    createChildren(nestedTree.children);
+    createRequests(nestedTree, '');
+    createChildren(nestedTree.children, nestedTree.methodName);
 
     // Interface for mapped nested resources.
     interface KeyedNestedResources {
@@ -158,7 +163,7 @@ class RequestBuilder extends Resource
             const headers = getDefaultParameters(method.headers);
             const type = isQueryMethod(method) ? 'query' : 'body';
             const requestName = resource.id + pascalCase(method.method) + 'Request';
-            const returnType = method.queryParameters ? requestName : 'RequestInterface';
+            const returnType = requestName;
             if (type == 'query') {
                 s.multiline(`
     /**
@@ -176,7 +181,7 @@ class RequestBuilder extends Resource
             $query = array_merge($options['query'], $query);
         }
         $options['query'] = $query;`);
-                s.line(`        return $this->buildRequest(${stringify(method.method)}, $this->getUri(), null, $options${method.queryParameters ? ', ' + requestName + '::class': ''});`)
+                s.line(`        return $this->buildRequest(${stringify(method.method)}, $this->getUri(), null, $options, ${requestName}::class);`)
             } else {
                 s.multiline(`
     /**
@@ -186,7 +191,7 @@ class RequestBuilder extends Resource
      */`);
                 s.line(`    public function ${camelCase(method.method)}($body = null, array $options = [])${st() ? ': ' + returnType:''} {`);
                 s.line(`${setDefaultHeader(method.headers)}`);
-                s.line(`        return $this->buildRequest(${stringify(method.method)}, $this->getUri(), $body, $options${method.queryParameters ? ', ' + requestName + '::class' : ''});`)
+                s.line(`        return $this->buildRequest(${stringify(method.method)}, $this->getUri(), $body, $options, ${requestName}::class);`)
             }
             s.line(`    }`)
         }
@@ -336,10 +341,12 @@ class RequestBuilder extends Resource
     }
 
     // Create nested resource instances.
-    function createResource(resource:NestedResource) {
+    function createResource(resource:NestedResource, path: string) {
         const {withParams, noParams} = separateChildren(resource);
+        const localPath = path ? path + resource.relativeUri : resource.relativeUri;
 
         s.line(`final class ${resource.id} extends Resource {`);
+        s.line(`    const API_PATH='${localPath}';`);
 
         createThisResources(withParams, noParams);
 
@@ -348,41 +355,43 @@ class RequestBuilder extends Resource
 
         s.line(`}`);
 
-        createRequests(resource);
+        createRequests(resource, localPath);
 
-        createChildren(resource.children);
+        createChildren(resource.children, localPath);
     }
 
-    function createRequests(resource:NestedResource) {
+    function createRequests(resource:NestedResource, path: string) {
         for (const method of resource.methods) {
+            const localPath = path ? method.method.toUpperCase() + ' ' + path : method.method.toUpperCase();
+            const requestName = resource.id + pascalCase(method.method) + 'Request';
+            s.multiline(`final class ${requestName} extends ApiRequest {
+    const API_PATH = '${localPath}';`);
             if (method.queryParameters) {
-                const requestName = resource.id + pascalCase(method.method) + 'Request';
-                s.multiline(`final class ${requestName} extends Request {
-
+                s.multiline(`
     private $query;
     private $queryParts;`);
 
                 for (const key of Object.keys(method.queryParameters)) {
                     const parameter = method.queryParameters[key];
                     const result = parameter.name.match(/<<([^>]*)>>/g);
-                    let placeHolders: any = [];
+                    let placeHolders:any = [];
                     if (result && result.length > 0) {
                         result.forEach(
-                            function (entry: string) {
+                            function (entry:string) {
                                 placeHolders.push(entry.match('<<([^>]*)>>'));
                             }
                         );
                     }
                     s.multiline(`
     /**`);
-                    for(const placeHolder of placeHolders) {
+                    for (const placeHolder of placeHolders) {
                         s.line(`     * @param $${placeHolder[1]}`)
                     }
 
                     s.multiline(`     * @param $${camelCase(parameter.name)}
      * @return ${requestName}
      */
-    public function with${pascalCase(parameter.name)}(${placeHolders.length > 0 ? toArgumentArray(placeHolders) + ', ': ''}$${camelCase(parameter.name)})${st() ? ': ' + requestName:''} {
+    public function with${pascalCase(parameter.name)}(${placeHolders.length > 0 ? toArgumentArray(placeHolders) + ', ' : ''}$${camelCase(parameter.name)})${st() ? ': ' + requestName : ''} {
         $query = $this->getUri()->getQuery();
         if ($this->query !== $query) {
             $this->queryParts = Psr7\\parse_query($query);
@@ -402,15 +411,15 @@ class RequestBuilder extends Resource
     }
                 `);
                 }
-                s.line(`}`);
             }
+            s.line(`}`);
         }
     }
 
     // Generate all children.
-    function createChildren(children:KeyedNestedResources) {
+    function createChildren(children:KeyedNestedResources, path: string) {
         for (const key of Object.keys(children)) {
-            createResource(children[key]);
+            createResource(children[key], path);
         }
     }
 
