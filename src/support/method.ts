@@ -39,6 +39,36 @@ export function getRequestSnippet (method: any, resource: any) {
 }
 
 /**
+ * Create documented request snippet.
+ */
+export function getTestRequestSnippet (method: any, resource: any) {
+  const type = isQueryMethod(method) ? 'query' : 'body'
+
+  if (method.annotations && method.annotations['client.methodName']) {
+    const methodName = method.annotations['client.methodName'].structuredValue
+
+    if (Object.keys(resource.uriParameters).length) {
+      return `with${pascalCase(methodName)}([uriParameters, [${type}, [options]]])`
+    }
+
+    return `${methodName}([${type}, [options]])`
+  }
+
+  const parts = resource.relativeUri.split(/(?=[\/\.])/g)
+
+  return parts.map(function (part: string) {
+        const methodName = toMethodName(part)
+        const uriParams = Object.keys(getUsedUriParameters(part, resource.uriParameters))
+
+        if (uriParams.length) {
+          return `with${pascalCase(methodName)}('${uriParams.join('\', \'')}')`
+        }
+
+        return `${methodName}()`
+      }).join('->') + `->${camelCase(method.method)}($${type} = null, $options = [])`
+}
+
+/**
  * Generate the display name for the README.
  */
 export function getDisplayName (method: any, resource: any) {

@@ -12,7 +12,9 @@ import {
 
 export default function (api:any) {
     let namespace:any = {};
+    let namespaceDev:any = {};
     namespace[toNamespace(api.title) + '\\'] = "src/";
+    namespaceDev[toNamespace(api.title) + '\\Tests\\'] = "tests/";
     const packageName = paramCase(api.title) + '/raml-php-sdk';
     return `${JSON.stringify({
         name: packageName,
@@ -24,6 +26,9 @@ export default function (api:any) {
             ],
             "psr-4": namespace
         },
+        "autoload-dev": {
+            "psr-4": namespaceDev
+        },
         require: {
             php: st() ? '>=7.0': '>=5.6',
             "guzzlehttp/guzzle": "^6.0",
@@ -34,7 +39,8 @@ export default function (api:any) {
             "cache/filesystem-adapter": "^0.3"
         },
         "require-dev": {
-            "monolog/monolog": "^1.3"
+            "monolog/monolog": "^1.3",
+            "phpunit/phpunit": "^5.7 || ^6.0"
         }
     }, null, 2)}\n`
 }
