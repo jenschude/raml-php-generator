@@ -12,7 +12,7 @@ import {
 
 export default function (api:any):string {
     const s = new Strands();
-
+    const apiTypes = api.types ? api.types : [];
     s.line(`<?php`);
     if (st()) {
         s.line(`declare(strict_types=1);`);
@@ -227,43 +227,47 @@ class Collection implements \\Iterator, \\Countable, \\JsonSerializable, Hydrati
 }
 `);
 
-    const displayNames = getDisplayNames(api.types);
-    const discriminatorList = getDiscriminatorTypes(api.types);
-    createModels(api.types);
+    const displayNames = getDisplayNames(apiTypes);
+    const discriminatorList = getDiscriminatorTypes(apiTypes);
+    createModels(apiTypes);
 
-    createCollections(api.types);
+    createCollections(apiTypes);
 
-    createMapper(api.types);
+    createMapper(apiTypes);
 
     function getDisplayNames(types: any) {
         let displayNames:any = {};
-        for (const key of Object.keys(types)) {
-            const typeDef = types[key];
-            const typeName = Object.keys(typeDef)[0];
-            const type = typeDef[typeName];
-            displayNames[typeName] = type.displayName;
+        if (types) {
+            for (const key of Object.keys(types)) {
+                const typeDef = types[key];
+                const typeName = Object.keys(typeDef)[0];
+                const type = typeDef[typeName];
+                displayNames[typeName] = type.displayName;
+            }
         }
         return displayNames;
     }
 
     function getDiscriminatorTypes(types: any) {
         let discriminatorTypes:any = {};
-        for (const key of Object.keys(types)) {
-            const typeDef = types[key];
-            const typeName = Object.keys(typeDef)[0];
-            const type = typeDef[typeName];
+        if (types) {
+            for (const key of Object.keys(types)) {
+                const typeDef = types[key];
+                const typeName = Object.keys(typeDef)[0];
+                const type = typeDef[typeName];
 
-            if (type.discriminator) {
-                if (!discriminatorTypes[type.displayName]) {
-                    discriminatorTypes[type.displayName] = { list : [] };
+                if (type.discriminator) {
+                    if (!discriminatorTypes[type.displayName]) {
+                        discriminatorTypes[type.displayName] = { list : [] };
+                    }
+                    discriminatorTypes[type.displayName].discriminator = type.discriminator;
                 }
-                discriminatorTypes[type.displayName].discriminator = type.discriminator;
-            }
-            if (type.discriminatorValue) {
-                if (!discriminatorTypes[type.type]) {
-                    discriminatorTypes[type.type] = { list : [] };
+                if (type.discriminatorValue) {
+                    if (!discriminatorTypes[type.type]) {
+                        discriminatorTypes[type.type] = { list : [] };
+                    }
+                    discriminatorTypes[type.type].list.push({ discriminatorValue: type.discriminatorValue, type: type.displayName });
                 }
-                discriminatorTypes[type.type].list.push({ discriminatorValue: type.discriminatorValue, type: type.displayName });
             }
         }
         return discriminatorTypes;
@@ -271,21 +275,25 @@ class Collection implements \\Iterator, \\Countable, \\JsonSerializable, Hydrati
 
 
     function createModels(types:any) {
-        for (const key of Object.keys(types)) {
-            const typeDef = types[key];
-            const typeName = Object.keys(typeDef)[0];
-            const type = typeDef[typeName];
-            createModel(type);
+        if (types) {
+            for (const key of Object.keys(types)) {
+                const typeDef = types[key];
+                const typeName = Object.keys(typeDef)[0];
+                const type = typeDef[typeName];
+                createModel(type);
+            }
         }
     }
 
     function createCollections(types:any) {
-        for (const key of Object.keys(types)) {
-            const typeDef = types[key];
-            const typeName = Object.keys(typeDef)[0];
-            const type = typeDef[typeName];
-            if (type.annotations && type.annotations['generate-collection']) {
-                createCollection(type);
+        if (types) {
+            for (const key of Object.keys(types)) {
+                const typeDef = types[key];
+                const typeName = Object.keys(typeDef)[0];
+                const type = typeDef[typeName];
+                if (type.annotations && type.annotations['generate-collection']) {
+                    createCollection(type);
+                }
             }
         }
     }
@@ -346,11 +354,13 @@ class Mapper
 
 class HydratorGenerator {
     protected static $types = [`);
-        for (const key of Object.keys(types)) {
-            const typeDef = types[key];
-            const typeName = Object.keys(typeDef)[0];
-            const type = typeDef[typeName];
-            createHydratorMap(type);
+        if (types) {
+            for (const key of Object.keys(types)) {
+                const typeDef = types[key];
+                const typeName = Object.keys(typeDef)[0];
+                const type = typeDef[typeName];
+                createHydratorMap(type);
+            }
         }
         s.multiline(`    ];
         
