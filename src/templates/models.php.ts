@@ -26,7 +26,7 @@ class JsonObject implements \\JsonSerializable, HydrationInterface
 {
     private $rawData;
 
-    public function __construct(array $data =[])
+    public function __construct(array $data = [])
     {
         $this->rawData = $data;
     }
@@ -95,7 +95,7 @@ class Collection implements \\Iterator, \\Countable, \\JsonSerializable, Hydrati
 
     protected $data = [];
 
-    public function __construct(array $data =[])
+    public function __construct(array $data = [])
     {
         $this->initialize($data);
     }
@@ -546,13 +546,26 @@ class HydratorGenerator {
         }
         s.line(`class ${type.displayName}${extendedType ? ` extends ${extendedType}` : ''} {`);
         if (type.properties) {
-            for(const key of Object.keys(type.properties)) {
+            for (const key of Object.keys(type.properties)) {
                 const property = type.properties[key];
                 if (property.displayName[0] == '/') {
                     continue;
                 }
                 s.line(`    protected $${property.displayName};`);
             }
+        }
+        if (type.discriminator) {
+            s.multiline(`
+    const DISCRIMINATOR_VALUE = null;
+    public function __construct(array $data = []) {
+        $this->${type.discriminator} = static::DISCRIMINATOR_VALUE;
+        parent::__construct($data);
+    }`);
+        }
+        if (type.discriminatorValue) {
+            s.line(`    const DISCRIMINATOR_VALUE = ${stringify(type.discriminatorValue)};`);
+        }
+        if (type.properties) {
             for(const key of Object.keys(type.properties)) {
                 const property = type.properties[key];
                 if (property.displayName[0] == '/') {
