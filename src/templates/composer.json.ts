@@ -22,7 +22,8 @@ export default function (api:any) {
         license: "MIT",
         autoload: {
             files: [
-                "classes.php"
+                "classes.php",
+                "models.php"
             ],
             "psr-4": namespace
         },
@@ -36,7 +37,8 @@ export default function (api:any) {
             "guzzlehttp/psr7": "^1.1",
             "psr/cache": "^1.0",
             "cache/adapter-common": "^0.3",
-            "cache/filesystem-adapter": "^0.3"
+            "cache/filesystem-adapter": "^0.3",
+            "zendframework/zend-hydrator":   "^2.0"
         },
         "require-dev": {
             "monolog/monolog": "^1.3",
