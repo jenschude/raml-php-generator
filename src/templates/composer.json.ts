@@ -22,8 +22,7 @@ export default function (api:any) {
         license: "MIT",
         autoload: {
             files: [
-                "classes.php",
-                "models.php"
+                "classes.php"
             ],
             "psr-4": namespace
         },

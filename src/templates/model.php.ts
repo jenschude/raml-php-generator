@@ -10,230 +10,21 @@ import {
 } from '../support/feature'
 
 
-export default function (api:any):string {
+export default function (api:any, data: any):string {
     const s = new Strands();
     const apiTypes = api.types ? api.types : [];
+    const apiType = data.type ? data.type : [];
     s.line(`<?php`);
     if (st()) {
         s.line(`declare(strict_types=1);`);
     }
     s.multiline(`
 namespace ${toNamespace(api.title)}\\Model;
-
-use Zend\\Hydrator\\HydrationInterface;
-
-class JsonObject implements \\JsonSerializable, HydrationInterface
-{
-    private $rawData;
-
-    public function __construct(array $data = [])
-    {
-        $this->rawData = $data;
-    }
-
-    protected function raw($field)
-    {
-        if (isset($this->rawData[$field])) {
-            return $this->rawData[$field];
-        }
-        return null;
-    }
-
-    public function jsonSerialize()
-    {
-        return $this->toArray();
-    }
-
-    /**
-     * @inheritdoc
-     */
-    public static function fromArray(array $data)
-    {
-        return new static($data);
-    }
-
-    /**
-     * @inheritdoc
-     */
-    public function toArray()
-    {
-        $data = array_filter(
-            get_object_vars($this),
-            function ($value, $key) {
-                if ($key == 'rawData') {
-                    return false;
-                }
-                return !is_null($value);
-            },
-            ARRAY_FILTER_USE_BOTH
-        );
-        $data = array_merge($this->rawData, $data);
-        return $data;
-    }
-    
-    public function hydrate(array $data, $object)
-    {
-        $object->rawData = $data;
-    }
-}
-
-class Collection implements \\Iterator, \\Countable, \\JsonSerializable, HydrationInterface
-{
-    private $rawData;
-
-    /**
-     * @var array
-     */
-    private $keys = array();
-
-    /**
-     * @var int
-     */
-    private $pos = 0;
-
-    private $indexes = [];
-
-    protected $data = [];
-
-    public function __construct(array $data = [])
-    {
-        $this->initialize($data);
-    }
-    
-    private function initialize(array $data)
-    {
-        $this->indexes = [];
-        $this->pos = 0;
-        $this->keys = array_keys($data);
-        $this->index($data);
-        $this->rawData = $data;
-    }
-
-    protected function raw($field)
-    {
-        if (isset($this->rawData[$field])) {
-            return $this->rawData[$field];
-        }
-        return null;
-    }
-
-    protected function rawSet($field, $data)
-    {
-        if (!is_null($field)) {
-            $this->rawData[$field] = $data;
-        } else {
-            $this->rawData[] = $data;
-        }
-    }
-
-    public function jsonSerialize()
-    {
-        return $this->toArray();
-    }
-
-    /**
-     * @inheritdoc
-     */
-    public static function fromArray(array $data)
-    {
-        return new static($data);
-    }
-
-    /**
-     * @inheritdoc
-     */
-    public function toArray()
-    {
-        return $this->rawData;
-    }
-
-    protected function index($data)
-    {
-    }
-
-    protected function addToIndex($index, $key, $value)
-    {
-        $this->indexes[$index][$key] = $value;
-    }
-
-    protected function valueByKey($index, $key)
-    {
-        return isset($this->indexes[$index][$key]) ? $this->at($this->indexes[$index][$key]) : null;
-    }
-
-    /**
-     * @inheritDoc
-     */
-    public function current()
-    {
-        if (isset($this->keys[$this->pos])) {
-            return $this->at($this->keys[$this->pos]);
-        }
-        return null;
-    }
-    
-    public function at($index)
-    {
-        return $this->raw($index);
-    }
-
-    /**
-     * @inheritDoc
-     */
-    public function next()
-    {
-        $this->pos++;
-    }
-
-    /**
-     * @inheritDoc
-     */
-    public function key()
-    {
-        if ($this->valid()) {
-            return $this->keys[$this->pos];
-        }
-        return null;
-    }
-
-    /**
-     * @inheritDoc
-     */
-    public function valid()
-    {
-        return isset($this->keys[$this->pos]);
-    }
-
-    /**
-     * @inheritDoc
-     */
-    public function rewind()
-    {
-        $this->pos = 0;
-    }
-
-    /**
-     * @inheritDoc
-     */
-    public function count()
-    {
-        return count($this->keys);
-    }
-    
-    public function hydrate(array $data, $object)
-    {
-        $object->initialize($data);
-    }
-}
 `);
 
     const displayNames = getDisplayNames(apiTypes);
     const discriminatorList = getDiscriminatorTypes(apiTypes);
-    createModels(apiTypes);
-
-    createCollections(apiTypes);
-
-    createMapper(apiTypes);
+    createModel(apiType);
 
     function getDisplayNames(types: any) {
         let displayNames:any = {};
@@ -420,10 +211,18 @@ class HydratorGenerator {
         s.multiline(`}`);
     }
 
-    function getReturnType(property:any) {
+    function getReturnType(property:any): string
+    {
         const overrideType = property.annotations && property.annotations['generator-type'] ? property.annotations['generator-type'] : '';
         if (overrideType) {
-            return `${overrideType.structuredValue}`;
+            const arrayType = overrideType.structuredValue.includes('[]');
+            const itemType = overrideType.structuredValue.replace('[]', '');
+            const overrideProperty = {
+                displayName: property.displayName,
+                type: arrayType ? ['array'] : [overrideType],
+                items: arrayType ? itemType : null
+            };
+            return getReturnType(overrideProperty);
         }
         const propertyType = property.type.length == 1 ? property.type[0] : '';
         switch (propertyType) {
@@ -457,11 +256,18 @@ class HydratorGenerator {
         }
     }
 
-    function getMapping(property:any)
+    function getMapping(property:any): string
     {
         const overrideType = property.annotations && property.annotations['generator-type'] ? property.annotations['generator-type'] : '';
         if (overrideType) {
-            return `return Mapper::map($value, ${overrideType.structuredValue}::class);`;
+            const arrayType = overrideType.structuredValue.includes('[]');
+            const itemType = overrideType.structuredValue.replace('[]', '');
+            const overrideProperty = {
+                displayName: property.displayName,
+                type: arrayType ? ['array'] : [overrideType],
+                items: arrayType ? itemType : null
+            };
+            return getMapping(overrideProperty);
         }
         const propertyType = property.type.length >= 1 ? property.type[0] : '';
         const instanceClass = displayNames[propertyType] ? displayNames[propertyType] : '';
@@ -498,11 +304,18 @@ class HydratorGenerator {
         }
     }
 
-    function getEmptyMapping(property: any)
+    function getEmptyMapping(property: any): string
     {
-        const overrideType = property.annotations && property.annotations['generator-type'] ? property.annotations['generator-type'] : '';
+        const overrideType = property.annotations && property.annotations['generator-type'] ? property.annotations['generator-type'] : false;
         if (overrideType) {
-            return `return Mapper::map([], ${overrideType.structuredValue}::class);`
+            const arrayType = overrideType.structuredValue.includes('[]');
+            const itemType = overrideType.structuredValue.replace('[]', '');
+            const overrideProperty = {
+                displayName: property.displayName,
+                type: arrayType ? ['array'] : [overrideType],
+                items: arrayType ? itemType : null
+            };
+            return getEmptyMapping(overrideProperty);
         }
         const propertyType = property.type.length >= 1 ? property.type[0] : '';
         const instanceClass = displayNames[propertyType] ? displayNames[propertyType] : '';
@@ -545,6 +358,11 @@ class HydratorGenerator {
             extendedType = type.annotations['generator-type'].structuredValue;
         }
         s.line(`class ${type.displayName}${extendedType ? ` extends ${extendedType}` : ''} {`);
+        if (type.type.length == 1 && type.type[0] == 'string') {
+            for (const enumValue of type.enum) {
+                s.line(` const ${enumValue.toUpperCase().replace(/[-]/g, '_')} = ${stringify(enumValue)};`);
+            }
+        }
         if (type.properties) {
             for (const key of Object.keys(type.properties)) {
                 const property = type.properties[key];
