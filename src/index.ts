@@ -43,31 +43,35 @@ function dynamicTemplates(templates: Templates, api: any, data: any) {
   Object.keys(templates).forEach(function (key) {
     switch (key) {
       case 'modelcollection':
-        for (const typeKey of Object.keys(api.types)) {
-          const typeDef = api.types[typeKey];
-          const typeName = Object.keys(typeDef)[0];
-          const fileName = `src/Model/${typeDef[typeName].displayName}Collection.php`;
-          const d: any = data ? data : {};
-          d.type = typeDef[typeName];
-          if (files[fileName]) {
-            console.log('already exists: ' + fileName);
-          }
-          if (d.type.annotations && d.type.annotations['generate-collection']) {
-            files[fileName] = templates[key](api,  d);
+        if (api.types) {
+          for (const typeKey of Object.keys(api.types)) {
+            const typeDef = api.types[typeKey];
+            const typeName = Object.keys(typeDef)[0];
+            const fileName = `src/Model/${typeDef[typeName].displayName}Collection.php`;
+            const d:any = data ? data : {};
+            d.type = typeDef[typeName];
+            if (files[fileName]) {
+              console.log('already exists: ' + fileName);
+            }
+            if (d.type.annotations && d.type.annotations['generate-collection']) {
+              files[fileName] = templates[key](api, d);
+            }
           }
         }
         break;
       case 'model':
-        for (const typeKey of Object.keys(api.types)) {
-          const typeDef = api.types[typeKey];
-          const typeName = Object.keys(typeDef)[0];
-          const fileName = `src/Model/${typeDef[typeName].displayName}.php`;
-          const d: any = data ? data : {};
-          d.type = typeDef[typeName];
-          if (files[fileName]) {
-            console.log('already exists: ' + fileName);
+        if (api.types) {
+          for (const typeKey of Object.keys(api.types)) {
+            const typeDef = api.types[typeKey];
+            const typeName = Object.keys(typeDef)[0];
+            const fileName = `src/Model/${typeDef[typeName].displayName}.php`;
+            const d: any = data ? data : {};
+            d.type = typeDef[typeName];
+            if (files[fileName]) {
+              console.log('already exists: ' + fileName);
+            }
+            files[fileName] = templates[key](api,  d);
           }
-          files[fileName] = templates[key](api,  d);
         }
         break;
       default:
