@@ -88,6 +88,7 @@ export interface NestedMethod {
   method: string
   headers: any
   queryParameters: any
+  type: any
 }
 
 /**
@@ -111,11 +112,13 @@ export function nestedResources (api: any): NestedResource {
       if (child.methods) {
         // Push existing methods onto the active segment.
         for (const method of child.methods) {
+          const type = method.body && method.body['application/json'] && method.body['application/json'].type ? method.body['application/json'].type : [];
           node.methods.push({
             id: methodId(),
             method: method.method,
             headers: method.headers,
-            queryParameters: method.queryParameters
+            queryParameters: method.queryParameters,
+            type: type
           })
         }
       }

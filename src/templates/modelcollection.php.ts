@@ -23,7 +23,6 @@ namespace ${toNamespace(api.title)}\\Model;
 `);
 
     const displayNames = getDisplayNames(apiTypes);
-    const discriminatorList = getDiscriminatorTypes(apiTypes);
     createCollection(apiType);
 
     function getDisplayNames(types: any) {
@@ -37,149 +36,6 @@ namespace ${toNamespace(api.title)}\\Model;
             }
         }
         return displayNames;
-    }
-
-    function getDiscriminatorTypes(types: any) {
-        let discriminatorTypes:any = {};
-        if (types) {
-            for (const key of Object.keys(types)) {
-                const typeDef = types[key];
-                const typeName = Object.keys(typeDef)[0];
-                const type = typeDef[typeName];
-
-                if (type.discriminator) {
-                    if (!discriminatorTypes[type.displayName]) {
-                        discriminatorTypes[type.displayName] = { list : [] };
-                    }
-                    discriminatorTypes[type.displayName].discriminator = type.discriminator;
-                }
-                if (type.discriminatorValue) {
-                    if (!discriminatorTypes[type.type]) {
-                        discriminatorTypes[type.type] = { list : [] };
-                    }
-                    discriminatorTypes[type.type].list.push({ discriminatorValue: type.discriminatorValue, type: type.displayName });
-                }
-            }
-        }
-        return discriminatorTypes;
-    }
-
-
-    function createModels(types:any) {
-        if (types) {
-            for (const key of Object.keys(types)) {
-                const typeDef = types[key];
-                const typeName = Object.keys(typeDef)[0];
-                const type = typeDef[typeName];
-                createModel(type);
-            }
-        }
-    }
-
-    function createCollections(types:any) {
-        if (types) {
-            for (const key of Object.keys(types)) {
-                const typeDef = types[key];
-                const typeName = Object.keys(typeDef)[0];
-                const type = typeDef[typeName];
-                if (type.annotations && type.annotations['generate-collection']) {
-                    createCollection(type);
-                }
-            }
-        }
-    }
-
-    function createMapper(types:any) {
-        s.multiline(`
-class Mapper
-{
-    private static $instance;
-   
-    private $generator; 
-    
-    
-    private static function getInstance()
-    {
-        if (is_null(self::$instance)) {
-            self::$instance = new self();
-        }
-        return self::$instance;
-    }
-    
-    private function getHydrator($className)
-    {
-        if (is_null($this->generator)) {
-            $this->setGenerator(function ($className) {
-                $generator = new HydratorGenerator();
-                $hydratorClass = $generator->getHydratorClass($className);
-                return new $hydratorClass();
-            });
-        }
-        $generator = $this->generator;
-        return $generator($className);
-    }
-    
-    public function setGenerator(callable $fn)
-    {
-        $this->generator = $fn;
-    }
-    
-    public function mapToClass($value, $className)
-    {
-        if (!is_null($className)) {
-            $hydrator = $this->getHydrator($className);
-            $object = new $className();
-            $hydrator->hydrate($value, $object);
-        } else {
-            $object = $value;
-        }
-        
-        return $object;
-    }
-    
-    public static function map($value, $className)
-    {
-        return self::getInstance()->mapToClass($value, $className);
-    }
-}
-
-class HydratorGenerator {
-    protected static $types = [`);
-        if (types) {
-            for (const key of Object.keys(types)) {
-                const typeDef = types[key];
-                const typeName = Object.keys(typeDef)[0];
-                const type = typeDef[typeName];
-                createHydratorMap(type);
-            }
-        }
-        s.multiline(`    ];
-        
-    public function getHydratorClass($className)
-    {
-        $hydratorClass = null;
-        if (isset(self::$types[$className])) {
-            $hydratorClass = self::$types[$className];
-        }
-        return $hydratorClass;
-    }
-}`);
-    }
-
-    function createHydratorMap(type:any) {
-        s.line(`       ${type.displayName}::class => ${type.displayName}::class,`);
-        if (type.annotations && type.annotations['generate-collection']) {
-            s.line(`       ${type.displayName + 'Collection'}::class => ${type.displayName}Collection::class,`);
-        }
-    }
-
-    function createDiscriminatorMap(type:any, discriminatorTypes:any) {
-        s.line(`        ${type.displayName}::class => [`);
-        for (const type of discriminatorTypes) {
-            s.line(`            ${stringify(type.discriminatorValue)} => ${type.type}::class,`);
-
-        }
-        s.line(`        ],`);
     }
 
     function createCollection(type:any) {
@@ -295,9 +151,6 @@ class HydratorGenerator {
                 return `$this->${property.displayName} = $value;`;
             default:
                 if (instanceClass) {
-                    if (discriminatorList[instanceClass]) {
-
-                    }
                     return `$this->${property.displayName} = Mapper::map($value, ${instanceClass}::class);`;
                 }
                 return `$this->${property.displayName} = $value;`;
@@ -349,67 +202,5 @@ class HydratorGenerator {
         }
     }
 
-    function createModel(type:any) {
-        let extendedType = type.type.length == 1 && displayNames[type.type[0]] ? displayNames[type.type[0]] : 'JsonObject';
-        if (type.annotations && type.annotations['generator-ignore']) {
-            return;
-        }
-        if (type.annotations && type.annotations['generator-type']) {
-            extendedType = type.annotations['generator-type'].structuredValue;
-        }
-        s.line(`class ${type.displayName}${extendedType ? ` extends ${extendedType}` : ''} {`);
-        if (type.type.length == 1 && type.type[0] == 'string') {
-            for (const enumValue of type.enum) {
-                s.line(` const ${enumValue.toUpperCase().replace(/[-]/g, '_')} = ${stringify(enumValue)};`);
-            }
-        }
-        if (type.properties) {
-            for (const key of Object.keys(type.properties)) {
-                const property = type.properties[key];
-                if (property.displayName[0] == '/') {
-                    continue;
-                }
-                s.line(`    protected $${property.displayName};`);
-            }
-        }
-        if (type.discriminator) {
-            s.multiline(`
-    const DISCRIMINATOR_VALUE = null;
-    public function __construct(array $data = []) {
-        $this->${type.discriminator} = static::DISCRIMINATOR_VALUE;
-        parent::__construct($data);
-    }`);
-        }
-        if (type.discriminatorValue) {
-            s.line(`    const DISCRIMINATOR_VALUE = ${stringify(type.discriminatorValue)};`);
-        }
-        if (type.properties) {
-            for(const key of Object.keys(type.properties)) {
-                const property = type.properties[key];
-                if (property.displayName[0] == '/') {
-                    continue;
-                }
-                const ignoreSt = property.annotations && property.annotations['generator-ignore-strict'] ? true: false;
-                s.multiline(`
-    /**
-     * @return ${getReturnType(property)}
-     */
-    public function get${upperCaseFirst(property.displayName)}()${st() && !ignoreSt ? `: ${getReturnType(property)}` : ''}
-    {
-        if (is_null($this->${property.displayName})) {
-            $value = $this->raw('${property.displayName}');
-            if (!is_null($value)) {
-                ${getMapping(property)}
-            } else {
-                ${getEmptyMapping(property)}
-            }
-        }
-        return $this->${property.displayName};
-    }
-                `);
-            }
-        }
-        s.line(`}`);
-    }
     return s.toString();
 }
