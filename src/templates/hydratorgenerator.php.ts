@@ -41,9 +41,9 @@ class HydratorGenerator {
 }`);
 
     function createHydratorMap(type:any) {
-        s.line(`       ${type.displayName}::class => ${type.displayName}::class,`);
+        s.line(`       ${type.name}::class => ${type.name}::class,`);
         if (type.annotations && type.annotations['generate-collection']) {
-            s.line(`       ${type.displayName + 'Collection'}::class => ${type.displayName}Collection::class,`);
+            s.line(`       ${type.name + 'Collection'}::class => ${type.name}Collection::class,`);
         }
     }
 

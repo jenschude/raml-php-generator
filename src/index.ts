@@ -44,16 +44,21 @@ function dynamicTemplates(templates: Templates, api: any, data: any) {
     switch (key) {
       case 'modelcollection':
         if (api.types) {
+          const displayNames:any  = getDisplayNames(api.types);
+          const discriminatorList:any = getDiscriminatorTypes(api.types, displayNames);
           for (const typeKey of Object.keys(api.types)) {
             const typeDef = api.types[typeKey];
             const typeName = Object.keys(typeDef)[0];
-            const fileName = `src/Model/${typeDef[typeName].displayName}Collection.php`;
+            const fileName = `src/Model/${typeDef[typeName].name}Collection.php`;
             const d:any = data ? data : {};
             d.type = typeDef[typeName];
+            d.displayNames = displayNames;
+            d.discriminatorList = discriminatorList;
             if (files[fileName]) {
               console.log('already exists: ' + fileName);
             }
             if (d.type.annotations && d.type.annotations['generate-collection']) {
+              console.log("Generating collection:" + fileName);
               files[fileName] = templates[key](api, d);
             }
           }
@@ -61,15 +66,20 @@ function dynamicTemplates(templates: Templates, api: any, data: any) {
         break;
       case 'model':
         if (api.types) {
+          const displayNames:any  = getDisplayNames(api.types);
+          const discriminatorList:any = getDiscriminatorTypes(api.types, displayNames);
           for (const typeKey of Object.keys(api.types)) {
             const typeDef = api.types[typeKey];
             const typeName = Object.keys(typeDef)[0];
-            const fileName = `src/Model/${typeDef[typeName].displayName}.php`;
+            const fileName = `src/Model/${typeDef[typeName].name}.php`;
             const d: any = data ? data : {};
             d.type = typeDef[typeName];
+            d.displayNames = displayNames;
+            d.discriminatorList = discriminatorList;
             if (files[fileName]) {
               console.log('already exists: ' + fileName);
             }
+            console.log("Generating model:" + fileName);
             files[fileName] = templates[key](api,  d);
           }
         }
@@ -81,4 +91,39 @@ function dynamicTemplates(templates: Templates, api: any, data: any) {
   });
 
   return files
+}
+
+function getDisplayNames(types: any) {
+  const displayNames:any = {};
+  if (types) {
+    for (const key of Object.keys(types)) {
+      const typeDef = types[key];
+      const typeName = Object.keys(typeDef)[0];
+      const type = typeDef[typeName];
+      displayNames[typeName] = type.name;
+      if (type.annotations && type.annotations['generate-collection']) {
+        displayNames[typeName + 'Collection'] = type.name + 'Collection';
+      }
+    }
+  }
+  return displayNames;
+}
+
+function getDiscriminatorTypes(types: any, displayNames: any) {
+  const discriminatorTypes:any = {};
+  if (types) {
+    for (const key of Object.keys(types)) {
+      const typeDef = types[key];
+      const typeName = Object.keys(typeDef)[0];
+      const type = typeDef[typeName];
+      const displayName = displayNames[type.type];
+      if (type.discriminatorValue) {
+        if (!discriminatorTypes[displayName]) {
+          discriminatorTypes[displayName] = [];
+        }
+        discriminatorTypes[displayName].push({ discriminatorValue: type.discriminatorValue, type: type.name });
+      }
+    }
+  }
+  return discriminatorTypes;
 }

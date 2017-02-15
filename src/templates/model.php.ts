@@ -9,7 +9,6 @@ import {
     supportStrictTypes as st, toNamespace
 } from '../support/feature'
 
-
 export default function (api:any, data: any):string {
     const s = new Strands();
     const apiTypes = api.types ? api.types : [];
@@ -22,46 +21,9 @@ export default function (api:any, data: any):string {
 namespace ${toNamespace(api.title)}\\Model;
 `);
 
-    const displayNames = getDisplayNames(apiTypes);
-    const discriminatorList = getDiscriminatorTypes(apiTypes);
+    const displayNames = data.displayNames;
+    const discriminatorList = data.discriminatorList;
     createModel(apiType);
-
-    function getDisplayNames(types: any) {
-        const displayNames:any = {};
-        if (types) {
-            for (const key of Object.keys(types)) {
-                const typeDef = types[key];
-                const typeName = Object.keys(typeDef)[0];
-                const type = typeDef[typeName];
-                displayNames[typeName] = type.displayName;
-                if (type.annotations && type.annotations['generate-collection']) {
-                    displayNames[typeName + 'Collection'] = type.displayName + 'Collection';
-                }
-            }
-        }
-        return displayNames;
-    }
-
-
-
-    function getDiscriminatorTypes(types: any) {
-        const discriminatorTypes:any = {};
-        if (types) {
-            for (const key of Object.keys(types)) {
-                const typeDef = types[key];
-                const typeName = Object.keys(typeDef)[0];
-                const type = typeDef[typeName];
-                const displayName = displayNames[type.type];
-                if (type.discriminatorValue) {
-                    if (!discriminatorTypes[displayName]) {
-                        discriminatorTypes[displayName] = [];
-                    }
-                    discriminatorTypes[displayName].push({ discriminatorValue: type.discriminatorValue, type: type.displayName });
-                }
-            }
-        }
-        return discriminatorTypes;
-    }
 
     function getReturnType(property:any): string
     {
@@ -70,7 +32,7 @@ namespace ${toNamespace(api.title)}\\Model;
             const arrayType = overrideType.structuredValue.includes('[]');
             const itemType = overrideType.structuredValue.replace('[]', '');
             const overrideProperty = {
-                displayName: property.displayName,
+                name: property.name,
                 type: arrayType ? ['array'] : [overrideType.structuredValue],
                 items: arrayType ? itemType : null
             };
@@ -139,7 +101,7 @@ namespace ${toNamespace(api.title)}\\Model;
             const arrayType = overrideType.structuredValue.includes('[]');
             const itemType = overrideType.structuredValue.replace('[]', '');
             const overrideProperty = {
-                displayName: property.displayName,
+                name: property.name,
                 type: arrayType ? ['array'] : [overrideType.structuredValue],
                 items: arrayType ? itemType : null
             };
@@ -150,35 +112,35 @@ namespace ${toNamespace(api.title)}\\Model;
         const discriminatorClass = discriminatorList[instanceClass] ? true : false;
         switch (propertyType) {
             case 'string':
-                return `$this->${property.displayName} = (string)$value;`;
+                return `$this->${property.name} = (string)$value;`;
             case 'boolean':
-                return `$this->${property.displayName} = (bool)$value;`;
+                return `$this->${property.name} = (bool)$value;`;
             case 'integer':
-                return `$this->${property.displayName} = (int)$value;`;
+                return `$this->${property.name} = (int)$value;`;
             case 'number':
-                return `$this->${property.displayName} = (float)$value;`;
+                return `$this->${property.name} = (float)$value;`;
             case 'datetime':
             case 'date-only':
             case 'time-only':
             case 'datetime-only':
-                return `$this->${property.displayName} = new \\DateTimeImmutable($value);`;
+                return `$this->${property.name} = new \\DateTimeImmutable($value);`;
             case 'array':
                 if (property.items && displayNames[property.items]) {
-                    return `$this->${property.displayName} = Mapper::map($value, ${displayNames[property.items]}Collection::class);`;
+                    return `$this->${property.name} = Mapper::map($value, ${displayNames[property.items]}Collection::class);`;
                 } else {
-                    return `$this->${property.displayName} = $value;`;
+                    return `$this->${property.name} = $value;`;
                 }
             case 'object':
-                return `$this->${property.displayName} = $value;`;
+                return `$this->${property.name} = $value;`;
             default:
 
                 if (instanceClass) {
                     if (discriminatorClass) {
-                        return `$this->${property.displayName} = Mapper::map($value, ${instanceClass}::resolveDiscriminatorClass($value));`;
+                        return `$this->${property.name} = Mapper::map($value, ${instanceClass}::resolveDiscriminatorClass($value));`;
                     }
-                    return `$this->${property.displayName} = Mapper::map($value, ${instanceClass}::class);`;
+                    return `$this->${property.name} = Mapper::map($value, ${instanceClass}::class);`;
                 }
-                return `$this->${property.displayName} = $value;`;
+                return `$this->${property.name} = $value;`;
         }
     }
 
@@ -189,7 +151,7 @@ namespace ${toNamespace(api.title)}\\Model;
             const arrayType = overrideType.structuredValue.includes('[]');
             const itemType = overrideType.structuredValue.replace('[]', '');
             const overrideProperty = {
-                displayName: property.displayName,
+                name: property.name,
                 type: arrayType ? ['array'] : [overrideType.structuredValue],
                 items: arrayType ? itemType : null
             };
@@ -235,7 +197,7 @@ namespace ${toNamespace(api.title)}\\Model;
         if (type.annotations && type.annotations['generator-type']) {
             extendedType = type.annotations['generator-type'].structuredValue;
         }
-        s.line(`class ${type.displayName}${extendedType ? ` extends ${extendedType}` : ''} {`);
+        s.line(`class ${type.name}${extendedType ? ` extends ${extendedType}` : ''} {`);
         if (type.type.length == 1 && type.type[0] == 'string') {
             for (const enumValue of type.enum) {
                 s.line(` const ${enumValue.toUpperCase().replace(/[-]/g, '_')} = ${stringify(enumValue)};`);
@@ -244,10 +206,10 @@ namespace ${toNamespace(api.title)}\\Model;
         if (type.properties) {
             for (const key of Object.keys(type.properties)) {
                 const property = type.properties[key];
-                if (property.displayName[0] == '/') {
+                if (property.name[0] == '/') {
                     continue;
                 }
-                s.line(`    protected $${property.displayName};`);
+                s.line(`    protected $${property.name};`);
             }
         }
         if (type.discriminator) {
@@ -258,7 +220,7 @@ namespace ${toNamespace(api.title)}\\Model;
         $this->${type.discriminator} = static::DISCRIMINATOR_VALUE;
         parent::__construct($data);
     }`);
-            addDiscriminatorResolver(type.displayName);
+            addDiscriminatorResolver(type.name);
         }
         if (type.discriminatorValue) {
             s.line(`    const DISCRIMINATOR_VALUE = ${stringify(type.discriminatorValue)};`);
@@ -266,7 +228,7 @@ namespace ${toNamespace(api.title)}\\Model;
         if (type.properties) {
             for(const key of Object.keys(type.properties)) {
                 const property = type.properties[key];
-                if (property.displayName[0] == '/') {
+                if (property.name[0] == '/') {
                     continue;
                 }
                 const ignoreSt = property.annotations && property.annotations['generator-ignore-strict'] ? true: false;
@@ -274,17 +236,17 @@ namespace ${toNamespace(api.title)}\\Model;
     /**
      * @return ${getReturnType(property)}
      */
-    public function get${upperCaseFirst(property.displayName)}()${st() && !ignoreSt ? `: ${getReturnType(property)}` : ''}
+    public function get${upperCaseFirst(property.name)}()${st() && !ignoreSt ? `: ${getReturnType(property)}` : ''}
     {
-        if (is_null($this->${property.displayName})) {
-            $value = $this->raw('${property.displayName}');
+        if (is_null($this->${property.name})) {
+            $value = $this->raw('${property.name}');
             if (!is_null($value)) {
                 ${getMapping(property)}
             } else {
                 ${getEmptyMapping(property)}
             }
         }
-        return $this->${property.displayName};
+        return $this->${property.name};
     }
                 `);
             }

@@ -22,28 +22,16 @@ export default function (api:any, data: any):string {
 namespace ${toNamespace(api.title)}\\Model;
 `);
 
-    const displayNames = getDisplayNames(apiTypes);
-    const discriminatorList = getDiscriminatorTypes(apiTypes);
+    const displayNames = data.displayNames;
+    const discriminatorList = data.discriminatorList;
     createCollection(apiType);
 
-    function getDisplayNames(types: any) {
-        const displayNames:any = {};
-        if (types) {
-            for (const key of Object.keys(types)) {
-                const typeDef = types[key];
-                const typeName = Object.keys(typeDef)[0];
-                const type = typeDef[typeName];
-                displayNames[typeName] = type.displayName;
-            }
-        }
-        return displayNames;
-    }
 
     function createCollection(type:any) {
-        const instanceClass = type.displayName;
-        const discriminatorClass = discriminatorList[type.displayName] ? true : false;
+        const instanceClass = type.name;
+        const discriminatorClass = !!discriminatorList[type.name];
 
-        s.multiline(`class ${type.displayName}Collection extends Collection {`);
+        s.multiline(`class ${type.name}Collection extends Collection {`);
         s.multiline(`
     /**
      * @param $index
@@ -73,25 +61,6 @@ namespace ${toNamespace(api.title)}\\Model;
         return parent::current();
     }`);
         s.multiline(`}`);
-    }
-
-    function getDiscriminatorTypes(types: any) {
-        const discriminatorTypes:any = {};
-        if (types) {
-            for (const key of Object.keys(types)) {
-                const typeDef = types[key];
-                const typeName = Object.keys(typeDef)[0];
-                const type = typeDef[typeName];
-                const displayName = displayNames[type.type];
-                if (type.discriminatorValue) {
-                    if (!discriminatorTypes[displayName]) {
-                        discriminatorTypes[displayName] = [];
-                    }
-                    discriminatorTypes[displayName].push({ discriminatorValue: type.discriminatorValue, type: type.displayName });
-                }
-            }
-        }
-        return discriminatorTypes;
     }
 
     return s.toString();
