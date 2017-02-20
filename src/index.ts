@@ -52,6 +52,9 @@ function dynamicTemplates(templates: Templates, api: any, data: any) {
             const fileName = `src/Model/${typeDef[typeName].name}Collection.php`;
             const d:any = data ? data : {};
             d.type = typeDef[typeName];
+            if (d.type.annotations && d.type.annotations['generator-ignore']) {
+              continue;
+            }
             d.displayNames = displayNames;
             d.discriminatorList = discriminatorList;
             if (files[fileName]) {
@@ -74,6 +77,9 @@ function dynamicTemplates(templates: Templates, api: any, data: any) {
             const fileName = `src/Model/${typeDef[typeName].name}.php`;
             const d: any = data ? data : {};
             d.type = typeDef[typeName];
+            if (d.type.annotations && d.type.annotations['generator-ignore']) {
+              continue;
+            }
             d.displayNames = displayNames;
             d.discriminatorList = discriminatorList;
             if (files[fileName]) {

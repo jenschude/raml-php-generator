@@ -107,40 +107,41 @@ namespace ${toNamespace(api.title)}\\Model;
             };
             return getMapping(overrideProperty);
         }
+        const propertyName = property.name;
         const propertyType = property.type.length >= 1 ? property.type[0] : '';
         const instanceClass = displayNames[propertyType] ? displayNames[propertyType] : '';
-        const discriminatorClass = discriminatorList[instanceClass] ? true : false;
+        const discriminatorClass = !!discriminatorList[instanceClass];
         switch (propertyType) {
             case 'string':
-                return `$this->${property.name} = (string)$value;`;
+                return `$this->${propertyName} = (string)$value;`;
             case 'boolean':
-                return `$this->${property.name} = (bool)$value;`;
+                return `$this->${propertyName} = (bool)$value;`;
             case 'integer':
-                return `$this->${property.name} = (int)$value;`;
+                return `$this->${propertyName} = (int)$value;`;
             case 'number':
-                return `$this->${property.name} = (float)$value;`;
+                return `$this->${propertyName} = (float)$value;`;
             case 'datetime':
             case 'date-only':
             case 'time-only':
             case 'datetime-only':
-                return `$this->${property.name} = new \\DateTimeImmutable($value);`;
+                return `$this->${propertyName} = new \\DateTimeImmutable($value);`;
             case 'array':
                 if (property.items && displayNames[property.items]) {
-                    return `$this->${property.name} = Mapper::map($value, ${displayNames[property.items]}Collection::class);`;
+                    return `$this->${propertyName} = Mapper::map($value, ${displayNames[property.items]}Collection::class);`;
                 } else {
-                    return `$this->${property.name} = $value;`;
+                    return `$this->${propertyName} = $value;`;
                 }
             case 'object':
-                return `$this->${property.name} = $value;`;
+                return `$this->${propertyName} = $value;`;
             default:
 
                 if (instanceClass) {
                     if (discriminatorClass) {
-                        return `$this->${property.name} = Mapper::map($value, ${instanceClass}::resolveDiscriminatorClass($value));`;
+                        return `$this->${propertyName} = Mapper::map($value, ${instanceClass}::resolveDiscriminatorClass($value));`;
                     }
-                    return `$this->${property.name} = Mapper::map($value, ${instanceClass}::class);`;
+                    return `$this->${propertyName} = Mapper::map($value, ${instanceClass}::class);`;
                 }
-                return `$this->${property.name} = $value;`;
+                return `$this->${propertyName} = $value;`;
         }
     }
 
@@ -190,17 +191,17 @@ namespace ${toNamespace(api.title)}\\Model;
     }
 
     function createModel(type:any) {
-        let extendedType = type.type.length == 1 && displayNames[type.type[0]] ? displayNames[type.type[0]] : 'JsonObject';
         if (type.annotations && type.annotations['generator-ignore']) {
             return;
         }
+        let extendedType = type.type.length == 1 && displayNames[type.type[0]] ? displayNames[type.type[0]] : 'JsonObject';
         if (type.annotations && type.annotations['generator-type']) {
             extendedType = type.annotations['generator-type'].structuredValue;
         }
         s.line(`class ${type.name}${extendedType ? ` extends ${extendedType}` : ''} {`);
         if (type.type.length == 1 && type.type[0] == 'string') {
             for (const enumValue of type.enum) {
-                s.line(` const ${enumValue.toUpperCase().replace(/[-]/g, '_')} = ${stringify(enumValue)};`);
+                s.line(`    const ${enumValue.toUpperCase().replace(/[-]/g, '_')} = ${stringify(enumValue)};`);
             }
         }
         if (type.properties) {
@@ -231,12 +232,12 @@ namespace ${toNamespace(api.title)}\\Model;
                 if (property.name[0] == '/') {
                     continue;
                 }
-                const ignoreSt = property.annotations && property.annotations['generator-ignore-strict'] ? true: false;
+                const ignoreSt = !!(property.annotations && property.annotations['generator-ignore-strict']);
                 s.multiline(`
     /**
      * @return ${getReturnType(property)}
      */
-    public function get${upperCaseFirst(property.name)}()${st() && !ignoreSt ? `: ${getReturnType(property)}` : ''}
+    public function get${pascalCase(property.name)}()${st() && !ignoreSt ? `: ${getReturnType(property)}` : ''}
     {
         if (is_null($this->${property.name})) {
             $value = $this->raw('${property.name}');
