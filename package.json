@@ -48,6 +48,8 @@
   },
   "homepage": "https://github.com/jays-de/raml-php-generator",
   "devDependencies": {
+    "@types/core-js": "^0.9.35",
+    "@types/node": "^4.0.30",
     "express": "^4.12.3",
     "methods": "^1.1.2",
     "typescript": "^2.0",
@@ -56,13 +58,17 @@
   "dependencies": {
     "camel-case": "^3.0.0",
     "javascript-stringify": "^1.1.0",
+    "mkdirp": "^0.5.0",
     "param-case": "^2.1.0",
+    "parse-json": "^2.2.0",
     "pascal-case": "^2.0.0",
     "raml-1-parser": "^1.1.13",
     "raml-generator": "^1.0.0-3",
     "strands": "^1.0.1",
+    "thenify": "^3.2.0",
     "uniqueid": "^1.0.0",
-    "xtend": "^4.0.1"
+    "xtend": "^4.0.1",
+    "yargs": "^4.1.0"
   },
   "resolutions": {
     "raml-1-parser": "1.1.13"

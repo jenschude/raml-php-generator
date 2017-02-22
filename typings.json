@@ -1,9 +1,10 @@
 {
   "dependencies": {
     "raml-generator": "npm:raml-generator",
-    "xtend": "registry:npm/xtend"
-  },
-  "ambientDependencies": {
-    "node": "registry:dt/node#4.0.0+20160317120654"
+    "xtend": "registry:npm/xtend",
+    "thenify": "registry:npm/thenify",
+    "yargs": "registry:npm/yargs",
+    "parse-json": "registry:npm/parse-json",
+    "mkdirp": "registry:npm/mkdirp"
   }
 }
